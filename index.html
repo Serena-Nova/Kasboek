@@ -241,7 +241,7 @@ ol.steps{margin:6px 0 0;padding-left:1.2em;color:var(--muted);font-size:.9rem;di
 <div id="toast" class="toast" hidden></div>
 
 <script>
-const VERSION='2026-10-12m';
+const VERSION='2026-10-12o';
 const clone=o=>JSON.parse(JSON.stringify(o));
 /* ---------- Basis ---------- */
 const STORE='kasboek.v1', LOCAL='kasboek.device';
@@ -304,7 +304,7 @@ const PLAT_COLORS=['#7A5CC2','#3C9FA8','#C9822B','#4FA37A','#C25C8E','#2F6E9E','
 const TAX={year:2026,brackets:[[38883,.3575],[78426,.3756],[Infinity,.495]],za:1200,mkb:.127,deductCap:.3756,zvw:.0485,zvwMax:79409};
 
 const DEFAULT_STATE={tx:[],userRules:[],disabledBuiltins:[],extraCats:[],overrides:{},tax:{},sample:true,
-  budgets:{},goals:[],accounts:{},taxReserved:{},period:{mode:'cal',day:1,payer:''},tags:['Idonea','Jordy','Gezin','Kind','Dieren'],txTags:{},oneoff:{},dismissed:{},cash:[],cashAuto:false,planned:[],manualBal:{},savedAt:0,wipedAt:0};
+  budgets:{},goals:[],accounts:{},taxReserved:{},period:{mode:'cal',day:1,payer:''},tags:['Idonea','Jordy','Gezin','Kind','Dieren'],txTags:{},oneoff:{},dismissed:{},recur:{},cash:[],cashAuto:false,planned:[],manualBal:{},savedAt:0,wipedAt:0};
 let S=clone(DEFAULT_STATE);
 let D={tab:'',dbxKey:'',dbxRefresh:'',dbxAccess:'',dbxExp:0,pw:'',lastSync:0,syncErr:''}; // alleen dit apparaat
 let ui={tab:'nu',win:'14',month:null,q:'',fcat:'',fmonth:'',facc:'',ftag:'',acc:'',tag:'',tagOpen:'',limit:150,taxYear:null,wipe:false,restore:false,backupText:''};
@@ -662,7 +662,13 @@ function recurring(){
   for(const t of TX){ if(t.amount>=0||!inScope(t)||SAVING.has(t.cat)||IGNORE.has(t.cat)) continue;
     const k=normName(t.name)||normName(t.desc); if(!k) continue; (groups[k]=groups[k]||[]).push(t); }
   const res=[]; const lastData=TX.length?TX[0].date:todayISO();
+  const FDAYS={maand:30.4,kwartaal:91,halfjaar:182,jaar:365};
   for(const [key,list] of Object.entries(groups)){
+    const force=(S.recur||{})[key]; if(force==='no') continue;
+    if(force&&FDAYS[force]){ const so=[...list].sort((a,b)=>a.date.localeCompare(b.date)); const last=so[so.length-1]; const am=so.slice(-3).map(t=>-t.amount);
+      const amount=median(am); const nx=addDays(last.date,Math.round(FDAYS[force]));
+      res.push({key,manual:true,variable:Math.max(...am)-Math.min(...am)>amount*.1,day:+last.date.slice(8),gap:FDAYS[force],account:normIban(last.account),name:last.name,cat:last.cat,freq:force,amount,
+        monthly:amount*{maand:1,kwartaal:1/3,halfjaar:1/6,jaar:1/12}[force],last:last.date,next:nx,count:so.length,rise:null}); continue; }
     if(list.length<2) continue;
     const sorted=[...list].sort((a,b)=>a.date.localeCompare(b.date)).slice(-13); // recent patroon
     const gaps=[];for(let i=1;i<sorted.length;i++) gaps.push(daysBetween(sorted[i-1].date,sorted[i].date));
@@ -671,7 +677,7 @@ function recurring(){
     let freq=null, variable=false;
     const regular=gaps.filter(x=>Math.abs(x-30.4)<=8).length>=gaps.length*.8;
     if(g>=25&&g<=36&&sorted.length>=3&&regular&&spread<=.2) freq='maand';
-    else if(g>=25&&g<=36&&sorted.length>=4&&regular&&spread<=.8&&BILL_CATS.has(sorted[sorted.length-1].cat)){ freq='maand'; variable=true; } // wisselend bedrag, vast ritme (telefoon, energie)
+    else if(g>=25&&g<=36&&sorted.length>=4&&regular&&spread<=.8&&BILL_CATS.has(sorted[sorted.length-1].cat)&&sorted.filter(t=>/incasso/i.test(t.type)).length>=sorted.length*.6){ freq='maand'; variable=true; } // wisselend bedrag, vast ritme (telefoon, energie)
     else if(g>=80&&g<=100&&spread<=.25) freq='kwartaal';
     else if(g>=170&&g<=195&&spread<=.25) freq='halfjaar';
     else if(g>=350&&g<=380&&spread<=.25) freq='jaar';
@@ -1077,7 +1083,7 @@ function billsCard(lastData,lastSal,nextSal,accRows,spendSet){
   const row=(i)=>{const late=!i.paid.length&&i.due&&i.due<addDays(lastData,-3);
     return `<div class="rec" style="${i.paid.length?'opacity:.7':''}"><div style="min-width:0"><b>${i.paid.length?'<span class="in">✓</span> ':'<span style="color:var(--muted)">○</span> '}${esc(i.r.name)}</b>${i.r.freq!=='maand'?`<span class="pill">${i.r.freq}</span>`:''}${i.r.variable?'<span class="pill">wisselend</span>':''}
       <div class="meta">${i.paid.length?`afgeschreven ${fmtD(i.paid[0].date)}`:late?`<span class="warn">verwacht rond ${fmtD(i.due)}, nog niet gezien</span>`:`verwacht rond ${fmtD(i.due)}`}${accName(i)?' · '+accName(i):''}${!i.counts&&!i.paid.length?' · telt niet mee voor vrij te besteden':''}</div></div>
-      <div class="amt num ${i.paid.length?'':'out'}">${i.r.variable&&!i.paid.length?'± ':''}${eur.format(i.amt)}</div></div>`;};
+      <div class="amt"><div class="num ${i.paid.length?'':'out'}">${i.r.variable&&!i.paid.length?'± ':''}${eur.format(i.amt)}</div><button class="btn-link note" style="font-size:.75rem" data-act="recurno" data-key="${esc(i.r.key)}">geen vaste last</button></div></div>`;};
   return `<div class="card stack"><div class="spread"><h2>Vaste lasten deze maand</h2><span class="note">${fmtD(ws)} – ${fmtD(we)}</span></div>
     <div class="potbox"><div><h3>Nog te gaan</h3><div class="num out">${eur0.format(todoTot)}</div></div><div><h3>Al afgeschreven</h3><div class="num">${eur0.format(doneTot)}</div></div><div><h3>Totaal</h3><div class="num">${eur0.format(todoTot+doneTot)}</div></div></div>
     ${todo.length?`<div>${todo.map(row).join('')}</div>`:'<p class="in">Alle vaste lasten van deze maand zijn al afgeschreven.</p>'}
@@ -1264,10 +1270,13 @@ function viewInzicht(){
        <div><h3>Nu opzij gezet</h3><div class="num">${eur0.format(savedAvg)}<span class="note"> /mnd</span></div></div>
      </div>
      <div class="banner" style="margin:0;background:var(--accent-soft)"><div>${advice>0
-       ?`<b style="color:var(--accent)">Zet ${eur0.format(advice)} per maand automatisch apart.</b> Dat had in ${okCount} van de ${normal.length} maanden gekund zonder tekort. Stel het in ING in als vaste overboeking, direct na je salaris.`
+       ?(savedAvg>=25?(advice-savedAvg>=25?`<b style="color:var(--accent)">Er kan realistisch ${eur0.format(advice)} per maand opzij.</b> Je zet nu gemiddeld ${eur0.format(savedAvg)} apart, dus er kan nog zo'n <b>${eur0.format(Math.floor((advice-savedAvg)/25)*25)}</b> bij. Dat had in ${okCount} van de ${normal.length} maanden gekund zonder tekort.`
+         :`<b style="color:var(--accent)">Je spaart nu gemiddeld ${eur0.format(savedAvg)} per maand, en dat past.</b> Realistisch kan er ${eur0.format(advice)} per maand opzij, ook in een krappe maand. Je zit daar ${savedAvg>advice+25?'zelfs boven: let op dat je in dure maanden niet tekortkomt':'precies goed'}.`)
+       :`<b style="color:var(--accent)">Zet ${eur0.format(advice)} per maand automatisch apart.</b> Dat had in ${okCount} van de ${normal.length} maanden gekund zonder tekort. Stel het in ING in als vaste overboeking, direct na je salaris.`)
        :`<b style="color:var(--out)">In krappe maanden blijft er niets over.</b> Kijk hieronder welke maanden duur zijn en waar het meeste naartoe gaat, voordat je een vast spaarbedrag kiest.`}</div></div>
      ${overChart(normal,advice)}
      <p class="note">Elke staaf is wat er die maand overbleef: inkomen min uitgaven, vóór sparen. Groen haalt het spaarbedrag, oranje net niet, rood is een tekort. De stippellijn is het voorgestelde bedrag. Het gemiddelde zegt hier weinig, omdat één dure maand het scheeftrekt.</p>
+     ${saveDiag(S12,normal,p25,savedAvg)}
    </div>
 
    ${forecastCard(normal,S12,season,avgOut,advice)}
@@ -1381,6 +1390,34 @@ function checkCard(){
     ${incList.length?`<div class="stack-s"><h3>Wat Kasboek als inkomen telt</h3><p class="note">Staat hier iets tussen dat geen inkomen is, zoals een Tikkie terug of een overboeking van Jordy? Tik erop en zet die transacties op een andere categorie.</p>${incList.map(o=>`<button class="rec" style="cursor:pointer;background:none;border:none;border-bottom:1px solid var(--line);width:100%;text-align:left;font:inherit;color:inherit;border-radius:0" data-act="ypayer" data-q="${esc(o.name)}"><div style="min-width:0"><b>${esc(o.name)}</b><div class="meta">${o.n}×</div></div><div class="amt num in">${eur0.format(o.sum)}</div></button>`).join('')}</div>`:''}
    </div></details>`;
 }
+/* Waarom zegt Kasboek dat er niets over is? Zoek de bekende oorzaken in de eigen gegevens. */
+function saveDiag(S12,normal,p25,savedAvg){
+  const salK=salaryKey(); const salName=(payerCandidates().find(x=>x.key===salK)||{}).name||'salaris';
+  const salCount=k=>TX.filter(t=>t.mk===k&&t.amount>0&&payerKey(t)===salK&&inScope(t)).length;
+  const rows=S12.map((x,i)=>({k:x.k,inc:x.inc-x.oneoffIn,out:x.out-x.oneoff,saved:x.saved,over:normal[i].v,sal:salK?salCount(x.k):1}));
+  const odd=rows.filter(r=>r.sal!==1);
+  const issues=[];
+  if(salK&&isCal()&&odd.length>=2) issues.push(`<div class="todo"><div class="tt"><b>Je salaris valt rond de maandwisseling.</b> In ${odd.length} van de ${rows.length} maanden kwam ${esc(salName)} ${odd.some(r=>r.sal===0)?'niet':''}${odd.some(r=>r.sal===0)&&odd.some(r=>r.sal>1)?' of ':''}${odd.some(r=>r.sal>1)?'twee keer':''} binnen. Daardoor lijkt de ene maand rijk en de volgende een tekort. Laat de maand beginnen als je salaris binnenkomt.</div><div class="tb"><button class="btn-small btn-primary" data-act="fixperiod">Maand laten beginnen bij salaris</button></div></div>`);
+  const sd=salaryDays(); const atm=TX.filter(t=>t.cat==='Contant opgenomen'&&inScope(t)&&afterSalary(t.date,sd)&&S12.some(x=>x.k===t.mk));
+  const atmAvg=atm.reduce((a,t)=>a-t.amount,0)/S12.length;
+  if(!S.cashAuto&&atmAvg>=40) issues.push(`<div class="todo"><div class="tt"><b>Je pint vlak na je salaris gemiddeld ${eur0.format(atmAvg)} per maand.</b> Is dat geld voor de spaarpot? Nu telt het als uitgave.</div><div class="tb"><button class="btn-small btn-primary" data-act="fixcash">Ja, telt als sparen</button></div></div>`);
+  const cand={}; TX.filter(t=>t.amount<=-50&&inScope(t)&&S12.some(x=>x.k===t.mk)&&(t.cat==='Overig'||t.cat==='Overboeking eigen rekening'))
+    .forEach(t=>{const k=payerKey(t)||normIban(t.counter);if(!k)return;const o=cand[k]||(cand[k]={key:k,name:t.name||t.desc||t.counter,sum:0,n:0,months:new Set(),iban:normIban(t.counter),spaar:/spaar|sparen|savings|buffer|reserve/i.test(t.name+' '+t.desc)});o.sum-=t.amount;o.n++;o.months.add(t.mk);});
+  const sav=Object.values(cand).filter(o=>o.months.size>=3||o.spaar).sort((a,b)=>b.sum-a.sum).slice(0,4);
+  if(sav.length) issues.push(`<div class="stack-s" style="padding:12px 0;border-bottom:1px solid var(--line)"><div><b>Zijn dit overboekingen naar sparen?</b> Ze komen regelmatig terug en tellen nu als uitgave.</div>
+    ${sav.map(o=>`<div class="todo" style="padding:6px 0;border:none"><div class="tt">${esc(o.name)} <span class="note">${o.n}× · gem. ${eur0.format(o.sum/S12.length)}/mnd</span></div><div class="tb"><button class="btn-small" data-act="fixsave" data-key="${esc(o.key)}" data-iban="${esc(o.iban)}" data-name="${esc(o.name)}">Is sparen</button></div></div>`).join('')}</div>`);
+  const contradict=p25<=0||(savedAvg>100&&p25<savedAvg*.5);
+  if(!contradict&&!issues.length) return `<details><summary class="note">Per maand bekijken</summary>${diagTable(rows)}</details>`;
+  return `<div class="stack-s" style="border-top:1px solid var(--line);padding-top:10px">
+    ${contradict?`<p><b>Klopt dit niet met wat je echt spaart?</b> ${issues.length?'Kasboek vond deze mogelijke oorzaken in je gegevens:':'Kijk per maand waar het tekort vandaan komt. Tik op een maand in Meer → Maand voor de details.'}</p>`:''}
+    ${issues.join('')}
+    <details ${contradict&&!issues.length?'open':''}><summary class="note">Per maand bekijken</summary>${diagTable(rows)}</details></div>`;
+}
+function diagTable(rows){
+  return `<div class="ywrap" style="margin-top:8px"><table class="yt"><thead><tr><th>Maand</th><th>Binnen</th><th>Uit</th><th>Over</th><th>Opzij gezet</th></tr></thead><tbody>
+   ${rows.map(r=>`<tr class="crow"><td><span class="nm"><span>${esc(mLabel(r.k))}${r.sal===0?' <span class="warn">· geen salaris</span>':r.sal>1?' <span class="warn">· '+r.sal+'× salaris</span>':''}</span></span></td><td class="in">${nf0.format(r.inc)}</td><td>${nf0.format(r.out)}</td><td class="${r.over<0?'out':''}"><b>${nf0.format(r.over)}</b></td><td>${nf0.format(r.saved)}</td></tr>`).join('')}
+  </tbody></table></div><p class="note">"Over" is binnen min uit, vóór sparen. Wat je opzij zette, komt daar dus uit.</p>`;
+}
 function scopeBar(){
   return `<div class="spread"><span class="note">${esc(periodSummary())}</span><div class="row">${scopeSelect()}</div></div>
    ${ui.acc||ui.tag?`<div class="row"><span class="chip">${ui.tag?`<span class="dot" style="background:${tagColor(ui.tag)}"></span>Alleen label ${esc(ui.tag)}`:`Alleen ${esc((S.accounts[ui.acc]||{}).label||'')}`}</span><button class="btn-small" data-act="scopeall">Alles tonen</button></div>`:''}`;
@@ -1395,8 +1432,19 @@ function viewVast(){
   const titles={maand:'Elke maand',kwartaal:'Per kwartaal',halfjaar:'Per half jaar',jaar:'Per jaar'};
   const block=(k)=>groups[k].length?`<div class="card"><h2>${titles[k]}</h2>
     ${groups[k].map(r=>`<div class="rec"><div style="min-width:0"><b>${esc(r.name)}</b><span class="pill">${esc(r.cat)}</span>${r.rise?`<span class="pill rise">duurder</span>`:''}
-      <div class="meta">${r.count}× gezien · laatst ${fmtD(r.last)} · volgende rond ${fmtD(r.next)}${r.rise?` · was ${eur.format(r.rise.from)}`:''}</div></div>
-      <div class="amt"><div class="num">${eur.format(r.amount)}</div>${k!=='maand'?`<div class="meta num">${eur.format(r.monthly)}/mnd</div>`:''}</div></div>`).join('')}</div>`:'';
+${r.manual?'<span class="pill">zelf ingesteld</span>':''}${r.variable?'<span class="pill">wisselend</span>':''}
+      <div class="meta">${r.count}× gezien · laatst ${fmtD(r.last)} · volgende rond ${fmtD(r.next)}${r.rise?` · was ${eur.format(r.rise.from)}`:''}</div>
+      <div class="row" style="gap:6px;margin-top:6px"><select data-recurset="${esc(r.key)}" aria-label="Hoe vaak" style="font-size:.8rem;padding:3px 8px;border-radius:999px">${['maand','kwartaal','halfjaar','jaar'].map(f=>`<option value="${f}" ${r.freq===f?'selected':''}>${{maand:'Maandelijks',kwartaal:'Per kwartaal',halfjaar:'Per half jaar',jaar:'Per jaar'}[f]}</option>`).join('')}</select>
+        <button class="btn-small" data-act="recurno" data-key="${esc(r.key)}">Geen vaste last</button>${r.manual?`<button class="btn-small" data-act="recurauto" data-key="${esc(r.key)}">Automatisch</button>`:''}</div></div>
+      <div class="amt"><div class="num">${r.variable?'± ':''}${eur.format(r.amount)}</div>${k!=='maand'?`<div class="meta num">${eur.format(r.monthly)}/mnd</div>`:''}</div></div>`).join('')}</div>`:'';
+  const offKeys=Object.entries(S.recur||{}).filter(([,v])=>v==='no').map(([k])=>k);
+  const offNames=offKeys.map(k=>{const t=TX.find(x=>(normName(x.name)||normName(x.desc))===k);return {k,name:t?(t.name||t.desc):k};});
+  let found='';
+  if(ui.recq&&ui.recq.length>=2){ const q=ui.recq.toLowerCase(); const g={};
+    TX.filter(t=>t.amount<0&&(t.name+' '+t.desc).toLowerCase().includes(q)).forEach(t=>{const k=normName(t.name)||normName(t.desc);if(!k)return;const o=g[k]||(g[k]={k,name:t.name||t.desc,n:0,last:t.date,amt:-t.amount});o.n++;});
+    const recKeys=new Set(rec.map(r=>r.key));
+    found=Object.values(g).filter(o=>!recKeys.has(o.k)).slice(0,8).map(o=>`<div class="todo"><div class="tt"><b>${esc(o.name)}</b><div class="note">${o.n}× · laatst ${fmtD(o.last)} ${o.last.slice(0,4)} · ${eur.format(o.amt)}</div></div>
+      <div class="tb">${['maand','kwartaal','jaar'].map(f=>`<button class="btn-small" data-act="recuradd" data-key="${esc(o.k)}" data-f="${f}">${{maand:'Maandelijks',kwartaal:'Kwartaal',jaar:'Jaarlijks'}[f]}</button>`).join('')}</div></div>`).join('')||'<p class="note">Niets gevonden (of het staat er al tussen).</p>'; }
   return `<div class="stack">
     <div class="stats">
       <div class="stat"><h3>Vast per maand</h3><div class="v">${eur.format(monthlyTot)}</div></div>
@@ -1406,7 +1454,13 @@ function viewVast(){
     </div>
     ${rises.length?`<div class="card"><h2>Duurder geworden</h2>${rises.map(r=>`<div class="rec"><div style="min-width:0"><b>${esc(r.name)}</b><div class="meta">sinds ${fmtD(r.last)}</div></div><div class="amt num"><span class="note">${eur.format(r.rise.from)} →</span> <span class="out">${eur.format(r.rise.to)}</span><div class="meta">+${eur.format((r.rise.to-r.rise.from)*({maand:12,kwartaal:4,halfjaar:2,jaar:1}[r.freq]))} per jaar</div></div></div>`).join('')}</div>`:''}
     <p class="note">Herkend aan dezelfde ontvanger met een vergelijkbaar bedrag op een vast ritme. Een jaarbetaling verschijnt pas als er twee in je gegevens staan, dus laad bij voorkeur een heel jaar in.</p>
+    <div class="card stack"><h2>Mis je een vaste last?</h2>
+      <p class="note">Zoek de betaling op naam en kies hoe vaak hij terugkomt. Staat er iets tussen dat geen vaste last is, zoals een winkel, tik dan bij die betaling op <b>Geen vaste last</b>.</p>
+      <input id="recq" type="search" placeholder="Zoek, bijv. Vodafone" value="${esc(ui.recq||'')}" aria-label="Zoek betaling" style="width:100%">
+      ${found?`<div>${found}</div>`:''}
+    </div>
     ${block('maand')}${block('kwartaal')}${block('halfjaar')}${block('jaar')}
+    ${offNames.length?`<div class="card stack"><h2>Geen vaste last</h2><p class="note">Deze heb je uitgezet. Ze tellen niet mee als vaste last.</p><div>${offNames.map(o=>`<div class="rec"><div style="min-width:0"><b>${esc(o.name)}</b></div><div class="amt"><button class="btn-small" data-act="recurauto" data-key="${esc(o.k)}">Terugzetten</button></div></div>`).join('')}</div></div>`:''}
     ${rec.length?'':'<div class="card empty">Nog geen terugkerende betalingen gevonden. Daarvoor zijn minstens drie maanden aan gegevens nodig.</div>'}
   </div>`;
 }
@@ -1763,6 +1817,7 @@ function mergeStates(a,b){
   if((older.savedAt||0)>(newer.wipedAt||0)) for(const t of older.tx||[]) if(!ids.has(t.id)){out.tx.push(t);ids.add(t.id);}
   out.overrides={...(older.overrides||{}),...(newer.overrides||{})};
   out.cash=mergeById(older.cash,newer.cash);out.planned=mergeById(older.planned,newer.planned);
+  out.recur={...(older.recur||{}),...(newer.recur||{})};
   out.dismissed={...(older.dismissed||{}),...(newer.dismissed||{})};
   out.oneoff={...(older.oneoff||{}),...(newer.oneoff||{})};
   out.txTags={...(older.txTags||{}),...(newer.txTags||{})};
@@ -1833,6 +1888,13 @@ document.addEventListener('click',async e=>{
   if(a==='spendtoggle'){const ac=S.accounts[b.dataset.iban];if(ac){ac.spend=ac.spend===false?true:false;save();render();}}
   if(a==='dismiss'){S.dismissed={...(S.dismissed||{}),[b.dataset.key]:todayISO()};save();render();}
   if(a==='todo-overig'){ui.tab='transacties';ui.fcat='Overig';ui.fmonth='';ui.ftag='';ui.q='';ui.facc='';ui.fromDate=addDays(TX[0].date,-60);ui.limit=150;render();window.scrollTo(0,0);}
+  if(a==='fixperiod'){const k=salaryKey();S.period={...S.period,mode:'salary',payer:k};ui.month=null;save();render();toast('Je maand begint nu als je salaris binnenkomt.');}
+  if(a==='fixcash'){S.cashAuto=true;save();render();toast('Opnames vlak na je salaris tellen nu als sparen (contante spaarpot).');}
+  if(a==='fixsave'){const ib=b.dataset.iban; if(ib&&ib.length>=6&&!S.accounts[ib]){S.accounts[ib]={label:b.dataset.name||'Spaarrekening',type:'spaar',tags:[]};save();render();}
+    else { addRule({match:b.dataset.key,dir:'out',cat:'Sparen',tags:[]}); } toast('Telt nu als sparen.');}
+  if(a==='recurno'){S.recur={...(S.recur||{}),[b.dataset.key]:'no'};save();render();toast('Telt niet meer als vaste last.',{label:'Ongedaan maken',run:()=>{delete S.recur[b.dataset.key];save();render();}});}
+  if(a==='recurauto'){const r={...(S.recur||{})};delete r[b.dataset.key];S.recur=r;save();render();}
+  if(a==='recuradd'){S.recur={...(S.recur||{}),[b.dataset.key]:b.dataset.f};ui.recq='';save();render();toast('Toegevoegd als vaste last.');}
   if(a==='win'){ui.win=b.dataset.v;render();}
   if(a==='nucat'){ui.tab='transacties';ui.q='';ui.limit=150;ui.facc=ui.acc;ui.ftag='';ui.fmonth='';ui.fcat=b.dataset.cat;ui.fromDate=b.dataset.from;render();window.scrollTo(0,0);}
   if(a==='ycat'||a==='ytag'){ui.tab='transacties';ui.q='';ui.limit=150;ui.facc=ui.acc;
@@ -1927,6 +1989,7 @@ document.addEventListener('change',e=>{
   if(t.id==='scope'){const v=t.value;ui.acc=v.startsWith('acc:')?v.slice(4):'';ui.tag=v.startsWith('tag:')?v.slice(4):'';ui.month=null;render();}
   if(t.id==='cashauto'){S.cashAuto=t.checked;save();render();}
   if(t.matches('input[data-manbal]')){const i=t.dataset.manbal;const v=t.value;if(v==='')delete S.manualBal[i];else S.manualBal[i]={amount:+v,date:todayISO()};save();render();}
+  if(t.matches('select[data-recurset]')){S.recur={...(S.recur||{}),[t.dataset.recurset]:t.value};save();render();}
   if(t.id==='yr'){ui.yr=t.value;render();}
   if(t.id==='ftag'){ui.ftag=t.value;ui.limit=150;render();}
   if(t.id==='facc'){ui.facc=t.value;ui.limit=150;render();}
@@ -1945,6 +2008,7 @@ let qTimer;
 function rerenderKeep(id){render();const el=document.getElementById(id);if(el){el.focus();try{el.setSelectionRange(el.value.length,el.value.length);}catch(e){}}}
 document.addEventListener('input',e=>{
   const t=e.target;
+  if(t.id==='recq'){clearTimeout(qTimer);qTimer=setTimeout(()=>{ui.recq=t.value;rerenderKeep('recq');},250);}
   if(t.id==='q'){clearTimeout(qTimer);qTimer=setTimeout(()=>{ui.q=t.value;ui.limit=150;rerenderKeep('q');},250);}
   if(taxFields[t.id]){const y=ui.taxYear;S.tax[y]={...(S.tax[y]||{}),[taxFields[t.id]]:t.value};save();clearTimeout(qTimer);qTimer=setTimeout(()=>rerenderKeep(t.id),600);}
   if(t.id==='t-resman'){S.taxReserved[ui.taxYear]=t.value;save();clearTimeout(qTimer);qTimer=setTimeout(()=>rerenderKeep('t-resman'),600);}

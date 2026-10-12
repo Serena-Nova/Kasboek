@@ -1,13 +1,12 @@
-Kasboek — versie 2026-10-12m
+Kasboek — versie 2026-10-12o
 
 UPDATEN
 Upload alle bestanden uit deze map over de oude heen in je GitHub-repository.
 
-NIEUW: vergrendeling met wachtwoord
-- Aanzetten: Meer > Instellingen > "Vergrendeling met wachtwoord".
-- Daarna vraagt Kasboek bij het openen om je wachtwoord.
-- Je gegevens staan versleuteld in je browser (AES-256). Zonder wachtwoord is het onleesbaar.
-- Na 5 minuten niet gebruiken vergrendelt Kasboek vanzelf; bovenaan staat ook een knop "Vergrendelen".
-- Back-ups en het Dropbox-bestand worden met hetzelfde wachtwoord versleuteld.
-- Gebruik op je telefoon en laptop hetzelfde wachtwoord.
-- Wachtwoord kwijt = gegevens kwijt. Dan kun je alleen alles wissen en opnieuw inladen.
+NIEUW: zelf bepalen wat een vaste last is (Meer > Vaste lasten)
+- Bij elke vaste last: "Geen vaste last" (bijv. IKEA), of kies hoe vaak hij komt.
+- "Mis je een vaste last?": zoek een betaling en kies Maandelijks / Kwartaal / Jaarlijks.
+- Uitgezette betalingen staan onderaan en kun je terugzetten.
+- Ook op Nu kun je in "Vaste lasten deze maand" op "geen vaste last" tikken.
+- Wisselende bedragen tellen alleen nog als vaste last als het een incasso is
+  (dus niet meer winkels waar je zelf betaalt).
