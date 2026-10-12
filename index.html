@@ -236,7 +236,7 @@ ol.steps{margin:6px 0 0;padding-left:1.2em;color:var(--muted);font-size:.9rem;di
 <div id="toast" class="toast" hidden></div>
 
 <script>
-const VERSION='2026-10-12k';
+const VERSION='2026-10-12l';
 const clone=o=>JSON.parse(JSON.stringify(o));
 /* ---------- Basis ---------- */
 const STORE='kasboek.v1', LOCAL='kasboek.device';
@@ -537,6 +537,7 @@ function sampleData(){
     add(m+'-01','Woonstichting Voorbeeld',-985,'Incasso','Huur');
     add(m+'-03','Vattenfall Klantenservice',-142,'Incasso','Termijnbedrag energie');
     add(m+'-05','Ziggo Services BV',-62.50,'Incasso','Internet en tv');
+    add(m+'-18','Vodafone Libertel B.V.',-(24+rnd()*14),'Incasso','Mobiel abonnement');
     add(m+'-01','Zilveren Kruis Zorgverzekeringen',-276.40,'Incasso','Premie zorgverzekering');
     add(m+'-12','Netflix International B.V.',i<19?-13.99:-15.99,'Incasso','');
     add(m+'-19','Spotify AB',-17.99,'Incasso','Premium Family');
@@ -599,30 +600,34 @@ function tagSum(mk){
 }
 function daysBetween(a,b){return Math.round((new Date(b)-new Date(a))/864e5);}
 function median(a){const s=[...a].sort((x,y)=>x-y);const n=s.length;return n?(n%2?s[(n-1)/2]:(s[n/2-1]+s[n/2])/2):0;}
+const BILL_CATS=new Set(['Wonen','Energie & water','Internet & telefoon','Verzekeringen','Abonnementen','Belastingen','Kinderen','Gezondheid','Schrijfkosten']);
 function recurring(){
   const groups={};
   for(const t of TX){ if(t.amount>=0||!inScope(t)||SAVING.has(t.cat)||IGNORE.has(t.cat)) continue;
     const k=normName(t.name)||normName(t.desc); if(!k) continue; (groups[k]=groups[k]||[]).push(t); }
-  const res=[];
-  for(const list of Object.values(groups)){
+  const res=[]; const lastData=TX.length?TX[0].date:todayISO();
+  for(const [key,list] of Object.entries(groups)){
     if(list.length<2) continue;
-    const sorted=[...list].sort((a,b)=>a.date.localeCompare(b.date));
+    const sorted=[...list].sort((a,b)=>a.date.localeCompare(b.date)).slice(-13); // recent patroon
     const gaps=[];for(let i=1;i<sorted.length;i++) gaps.push(daysBetween(sorted[i-1].date,sorted[i].date));
     const g=median(gaps); const amts=sorted.map(t=>-t.amount); const med=median(amts);
     const spread=Math.max(...amts.map(a=>Math.abs(a-med)))/med;
-    let freq=null;
-    if(g>=25&&g<=36&&sorted.length>=3&&spread<=.2) freq='maand';
+    let freq=null, variable=false;
+    const regular=gaps.filter(x=>Math.abs(x-30.4)<=8).length>=gaps.length*.8;
+    if(g>=25&&g<=36&&sorted.length>=3&&regular&&spread<=.2) freq='maand';
+    else if(g>=25&&g<=36&&sorted.length>=4&&regular&&spread<=.8&&BILL_CATS.has(sorted[sorted.length-1].cat)){ freq='maand'; variable=true; } // wisselend bedrag, vast ritme (telefoon, energie)
     else if(g>=80&&g<=100&&spread<=.25) freq='kwartaal';
     else if(g>=170&&g<=195&&spread<=.25) freq='halfjaar';
     else if(g>=350&&g<=380&&spread<=.25) freq='jaar';
     if(!freq) continue;
     const last=sorted[sorted.length-1]; const lastAmt=-last.amount;
+    if(daysBetween(last.date,lastData)>g*2+10) continue; // gestopt / opgezegd
     const prev=amts.slice(0,-1); const prevMed=median(prev);
-    const rise=(prev.length>=2&&lastAmt>prevMed*1.03&&lastAmt-prevMed>=0.5)?{from:prevMed,to:lastAmt}:null;
-    const amount=rise?lastAmt:med;
+    const rise=(!variable&&prev.length>=2&&lastAmt>prevMed*1.03&&lastAmt-prevMed>=0.5)?{from:prevMed,to:lastAmt}:null;
+    const amount=variable?median(amts.slice(-3)):rise?lastAmt:med;
     const factor={maand:1,kwartaal:1/3,halfjaar:1/6,jaar:1/12}[freq];
     const next=new Date(last.date); next.setDate(next.getDate()+Math.round(g));
-    res.push({account:normIban(last.account),name:last.name,cat:last.cat,freq,amount,monthly:amount*factor,last:last.date,next:next.toISOString().slice(0,10),count:sorted.length,rise});
+    res.push({key,variable,day:+last.date.slice(8),gap:g,account:normIban(last.account),name:last.name,cat:last.cat,freq,amount,monthly:amount*factor,last:last.date,next:next.toISOString().slice(0,10),count:sorted.length,rise});
   }
   return res.sort((a,b)=>b.monthly-a.monthly);
 }
@@ -984,9 +989,42 @@ function viewNu(){
    <div class="card stack"><h2>Grootste uitgaven</h2>
      <div>${bigTx.map(t=>`<div class="rec"><div style="min-width:0"><b>${esc(t.name||t.desc)}</b><span class="pill">${esc(t.cat)}</span><div class="meta">${fmtD(t.date)}${Object.keys(COV).length>1?' · '+esc((S.accounts[normIban(t.account)]||{}).label||''):''}</div></div><div class="amt num out">${eur.format(-t.amount)}</div></div>`).join('')||'<p class="note">Geen uitgaven in deze periode.</p>'}</div></div>
 
-   ${coming.length?`<div class="card stack"><div class="spread"><h2>Gaat nog af${nextSal&&nextSal>lastData?` vóór ${fmtD(nextSal)}`:''}</h2><span class="num out">− ${eur0.format(comingTot)}</span></div>
+   ${billsCard(lastData,lastSal,nextSal,accRows,spendSet)}
+   ${coming.length&&false?`<div class="card stack"><div class="spread"><h2>Gaat nog af${nextSal&&nextSal>lastData?` vóór ${fmtD(nextSal)}`:''}</h2><span class="num out">− ${eur0.format(comingTot)}</span></div>
      <div>${coming.map(c=>`<div class="rec"><div style="min-width:0"><b>${esc(c.name)}</b><div class="meta">rond ${fmtD(c.date)}</div></div><div class="amt num">${eur.format(c.amount)}</div></div>`).join('')}</div>
      <p class="note">Geschat uit eerdere afschrijvingen en je geplande uitgaven.</p></div>`:''}
+  </div>`;
+}
+
+function billsCard(lastData,lastSal,nextSal,accRows,spendSet){
+  const cur=periodOf(lastData);
+  const ws=lastSal&&nextSal&&nextSal>lastData?lastSal:(cur?cur.start:lastData.slice(0,8)+'01');
+  const we=lastSal&&nextSal&&nextSal>lastData?addDays(nextSal,-1):(cur?cur.end:lastData.slice(0,8)+'28');
+  const multi=accRows.length>1;
+  const items=[];
+  for(const r of recurring()){
+    const paid=TX.filter(t=>t.amount<0&&t.date>=ws&&t.date<=we&&(normName(t.name)||normName(t.desc))===r.key);
+    let due=null;
+    if(r.freq==='maand'){ for(let d=ws;d<=we&&!due;d=addDays(d,1)){ if(+d.slice(8)===Math.min(r.day,dim(+d.slice(0,4),+d.slice(5,7)))) due=d; } }
+    else if(r.next>=ws&&r.next<=we) due=r.next;
+    if(!paid.length&&!due) continue;
+    const counts=!r.account||!multi||spendSet.has(r.account);
+    items.push({r,paid,due,counts,amt:paid.length?paid.reduce((a,t)=>a-t.amount,0):r.amount});
+  }
+  if(!items.length) return '';
+  items.sort((a,b)=>(a.paid.length-b.paid.length)||((a.due||'').localeCompare(b.due||'')));
+  const todo=items.filter(i=>!i.paid.length), done=items.filter(i=>i.paid.length);
+  const todoTot=todo.reduce((a,i)=>a+i.amt,0), todoCount=todo.filter(i=>i.counts).reduce((a,i)=>a+i.amt,0), doneTot=done.reduce((a,i)=>a+i.amt,0);
+  const accName=i=>multi&&i.r.account?esc((S.accounts[i.r.account]||{}).label||''):'';
+  const row=(i)=>{const late=!i.paid.length&&i.due&&i.due<addDays(lastData,-3);
+    return `<div class="rec" style="${i.paid.length?'opacity:.7':''}"><div style="min-width:0"><b>${i.paid.length?'<span class="in">✓</span> ':'<span style="color:var(--muted)">○</span> '}${esc(i.r.name)}</b>${i.r.freq!=='maand'?`<span class="pill">${i.r.freq}</span>`:''}${i.r.variable?'<span class="pill">wisselend</span>':''}
+      <div class="meta">${i.paid.length?`afgeschreven ${fmtD(i.paid[0].date)}`:late?`<span class="warn">verwacht rond ${fmtD(i.due)}, nog niet gezien</span>`:`verwacht rond ${fmtD(i.due)}`}${accName(i)?' · '+accName(i):''}${!i.counts&&!i.paid.length?' · telt niet mee voor vrij te besteden':''}</div></div>
+      <div class="amt num ${i.paid.length?'':'out'}">${i.r.variable&&!i.paid.length?'± ':''}${eur.format(i.amt)}</div></div>`;};
+  return `<div class="card stack"><div class="spread"><h2>Vaste lasten deze maand</h2><span class="note">${fmtD(ws)} – ${fmtD(we)}</span></div>
+    <div class="potbox"><div><h3>Nog te gaan</h3><div class="num out">${eur0.format(todoTot)}</div></div><div><h3>Al afgeschreven</h3><div class="num">${eur0.format(doneTot)}</div></div><div><h3>Totaal</h3><div class="num">${eur0.format(todoTot+doneTot)}</div></div></div>
+    ${todo.length?`<div>${todo.map(row).join('')}</div>`:'<p class="in">Alle vaste lasten van deze maand zijn al afgeschreven.</p>'}
+    ${done.length?`<details><summary class="note">Al afgeschreven (${done.length})</summary><div>${done.map(row).join('')}</div></details>`:''}
+    <p class="note">Herkend uit je afschriften: betalingen die elke maand (of elk kwartaal of jaar) rond dezelfde dag terugkomen.${todoCount!==todoTot?` Van wat nog komt, gaat ${eur0.format(todoCount)} af van de rekeningen die meetellen voor "vrij te besteden".`:''} Mist er iets? Het moet minstens drie keer in je afschriften staan.</p>
   </div>`;
 }
 

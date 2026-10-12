@@ -1,16 +1,10 @@
-Kasboek — versie 2026-10-12k
+Kasboek — versie 2026-10-12l
 
 UPDATEN
 Upload alle bestanden uit deze map over de oude heen in je GitHub-repository.
 
-VERANDERD
-- Nog maar vier tabbladen: Nu, Inzicht, Transacties en Meer.
-  Onder "Meer" staan Maand, Jaar, Vaste lasten, Sparen & plannen, Royalty's & belasting en Instellingen.
-- Bovenaan Nu: "Deze week" — een kort lijstje met wat je concreet kunt doen
-  (afschrift inladen, bedrag opzij zetten na salaris, geplande uitgave, duurder abonnement, ...).
-  Tik op "✓ Gedaan" om iets weg te halen.
-
-HOE GEBRUIK JE HET
-- Elke zondag: afschriften inladen, kijk op Nu naar "Deze week" en "per dag tot salaris".
-- Na je salaris: doe wat er bij "Deze week" staat over opzij zetten.
-- Af en toe: Inzicht en Meer > Vaste lasten om te zien waar het lekt.
+NIEUW
+- Op "Nu": "Vaste lasten deze maand" — elke vaste last met ✓ (al afgeschreven) of ○ (komt nog, rond welke datum).
+- Rekeningen met een wisselend bedrag (telefoon, energie) worden nu ook als vaste last herkend.
+- Opgezegde abonnementen tellen niet meer mee als vaste last.
+- Vakantie- of restaurantbetalingen die toevallig twee maanden achter elkaar kwamen, worden niet meer als vaste last gezien.
