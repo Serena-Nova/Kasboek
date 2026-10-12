@@ -121,6 +121,10 @@ table.yt{border-collapse:separate;border-spacing:0;font-size:.84rem;width:100%}
 .yt td[data-act]:hover{outline:2px solid var(--accent);outline-offset:-2px}
 .yt .nm{display:flex;gap:7px;align-items:center;overflow:hidden}
 .yt .nm span:last-child{overflow:hidden;text-overflow:ellipsis}
+.wrap.locked header.top>.row,.wrap.locked nav.tabs,.wrap.locked #banner{display:none}
+.lockbox{max-width:360px;margin:40px auto 0;text-align:center;align-items:stretch}
+.lockbox .lockicon{color:var(--accent);margin:0 auto}
+.lockbox details{text-align:left}
 .todo{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px 14px;align-items:center;padding:12px 0;border-bottom:1px solid var(--line)}
 .todo:last-child{border-bottom:none}
 .todo .tt{line-height:1.45;min-width:0}
@@ -218,7 +222,8 @@ ol.steps{margin:6px 0 0;padding-left:1.2em;color:var(--muted);font-size:.9rem;di
       <h1>Kasboek</h1>
       <p class="sub">Je ING-afschriften, ingedeeld. <span id="syncline"></span></p>
     </div>
-    <label class="btn btn-primary" for="file">ING-bestand inladen</label>
+    <div class="row" style="gap:8px"><button class="btn-small" id="lockhdr" data-act="lockhdr" hidden aria-label="Vergrendelen" title="Vergrendelen"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px"><rect x="4.5" y="10.5" width="15" height="10" rx="2.2"/><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"/></svg> Vergrendelen</button>
+    <label class="btn btn-primary" for="file">ING-bestand inladen</label></div>
     <input type="file" id="file" accept=".csv,text/csv,text/plain" multiple>
     <input type="file" id="restorefile" accept=".json,application/json">
   </header>
@@ -236,7 +241,7 @@ ol.steps{margin:6px 0 0;padding-left:1.2em;color:var(--muted);font-size:.9rem;di
 <div id="toast" class="toast" hidden></div>
 
 <script>
-const VERSION='2026-10-12l';
+const VERSION='2026-10-12m';
 const clone=o=>JSON.parse(JSON.stringify(o));
 /* ---------- Basis ---------- */
 const STORE='kasboek.v1', LOCAL='kasboek.device';
@@ -304,11 +309,62 @@ let S=clone(DEFAULT_STATE);
 let D={tab:'',dbxKey:'',dbxRefresh:'',dbxAccess:'',dbxExp:0,pw:'',lastSync:0,syncErr:''}; // alleen dit apparaat
 let ui={tab:'nu',win:'14',month:null,q:'',fcat:'',fmonth:'',facc:'',ftag:'',acc:'',tag:'',tagOpen:'',limit:150,taxYear:null,wipe:false,restore:false,backupText:''};
 
+/* Vergrendeling: met wachtwoord staat alles versleuteld (AES-GCM, sleutel via PBKDF2) in de browser.
+   Het wachtwoord en de sleutel staan alleen in het geheugen zolang Kasboek open en ontgrendeld is. */
+let LOCKED=false, LK=null, LSALT=null, SESSION_PW='', LOCKBLOB=null, hiddenAt=0;
+const AUTOLOCK_MIN=5;
 function load(){
-  try{const r=localStorage.getItem(STORE);if(r){S=cleanState(JSON.parse(r));}}catch(e){}
   try{const r=localStorage.getItem(LOCAL);if(r)D={...D,...JSON.parse(r)};}catch(e){}
+  try{const r=localStorage.getItem(STORE);if(r){const o=JSON.parse(r); if(o&&o.lock){LOCKED=true;LOCKBLOB=o;} else S=cleanState(o);}}catch(e){}
 }
-function saveLocal(){try{localStorage.setItem(STORE,JSON.stringify(S));}catch(e){}}
+let saveChain=Promise.resolve();
+function saveLocal(){
+  if(LOCKED) return;
+  if(!LK){try{localStorage.setItem(STORE,JSON.stringify(S));}catch(e){} return;}
+  const snap=JSON.stringify(S);
+  saveChain=saveChain.then(async()=>{const iv=crypto.getRandomValues(new Uint8Array(12));
+    const ct=new Uint8Array(await crypto.subtle.encrypt({name:'AES-GCM',iv},LK,te.encode(snap)));
+    try{localStorage.setItem(STORE,JSON.stringify({lock:1,s:b64(LSALT),i:b64(iv),d:b64(ct)}));}catch(e){}}).catch(()=>{});
+}
+const getPw=()=>SESSION_PW||D.pw||'';
+async function unlock(pw){
+  const o=LOCKBLOB; const salt=unb64(o.s); const key=await deriveKey(pw,salt);
+  const plain=await crypto.subtle.decrypt({name:'AES-GCM',iv:unb64(o.i)},key,unb64(o.d)); // gooit fout bij verkeerd wachtwoord
+  S=cleanState(JSON.parse(td.decode(plain))); LK=key; LSALT=salt; SESSION_PW=pw; LOCKED=false; LOCKBLOB=null;
+}
+async function enableLock(pw){
+  LSALT=crypto.getRandomValues(new Uint8Array(16)); LK=await deriveKey(pw,LSALT); SESSION_PW=pw;
+  if(D.pw){D.pw='';saveDevice();} saveLocal(); scheduleUpload();
+}
+function disableLock(){LK=null;LSALT=null;SESSION_PW='';saveLocal();scheduleUpload();}
+function lockNow(){
+  if(!LK) return; saveChain.then(()=>{
+    try{LOCKBLOB=JSON.parse(localStorage.getItem(STORE));}catch(e){}
+    if(!LOCKBLOB||!LOCKBLOB.lock) return;
+    S=clone(DEFAULT_STATE); TX=[]; LK=null; SESSION_PW=''; LOCKED=true; ui.backupText=''; renderLock(); });
+}
+function renderLock(err){
+  document.querySelector('.wrap').classList.add('locked');
+  $('#view').innerHTML=`<div class="lockbox card stack">
+    <div class="lockicon" aria-hidden="true"><svg viewBox="0 0 24 24" width="34" height="34" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4.5" y="10.5" width="15" height="10" rx="2.2"/><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"/></svg></div>
+    <h2>Kasboek is vergrendeld</h2>
+    <form id="unlockform" class="stack-s" autocomplete="off">
+      <input id="unlockpw" type="password" autocomplete="current-password" placeholder="Wachtwoord" aria-label="Wachtwoord" style="width:100%">
+      ${err?`<p class="out" style="font-size:.9rem">${esc(err)}</p>`:''}
+      <button class="btn-primary" type="submit" id="unlockbtn">Openen</button>
+    </form>
+    <details><summary class="note">Wachtwoord vergeten?</summary>
+      <div class="stack-s" style="margin-top:8px"><p class="note">Zonder wachtwoord kan niemand je gegevens lezen, ook Kasboek niet. Je kunt alles op dit apparaat wissen en opnieuw beginnen: laad dan je ING-bestanden opnieuw in.</p>
+      ${ui.wipeLock?`<div class="row"><button class="btn-danger btn-small" data-act="lockwipe2">Ja, alles op dit apparaat wissen</button><button class="btn-small" data-act="lockwipe0">Annuleren</button></div>`:`<div><button class="btn-small btn-danger" data-act="lockwipe1">Alles wissen en opnieuw beginnen</button></div>`}</div>
+    </details></div>`;
+  setTimeout(()=>{const i=$('#unlockpw');if(i)i.focus();},50);
+}
+document.addEventListener('submit',async e=>{
+  if(e.target.id!=='unlockform') return; e.preventDefault();
+  const pw=$('#unlockpw').value; if(!pw) return; const btn=$('#unlockbtn'); btn.disabled=true; btn.textContent='Openen…';
+  try{ await unlock(pw); document.querySelector('.wrap').classList.remove('locked'); afterOpen(); }
+  catch(err){ renderLock('Dat wachtwoord klopt niet.'); }
+});
 function saveDevice(){try{localStorage.setItem(LOCAL,JSON.stringify(D));}catch(e){}}
 function save(){S.savedAt=Date.now();saveLocal();scheduleUpload();}
 
@@ -661,6 +717,8 @@ function goalMonthly(g){
 
 /* ---------- Weergave ---------- */
 function render(){
+  if(LOCKED){renderLock();return;}
+  const lh=$('#lockhdr'); if(lh) lh.hidden=!LK;
   rebuild();
   const inMore=MORE.some(m=>m[0]===ui.tab);
   document.querySelectorAll('nav.tabs button').forEach(b=>b.setAttribute('aria-selected',b.dataset.tab===ui.tab||(inMore&&b.dataset.tab==='meer')));
@@ -1562,7 +1620,7 @@ function viewSettings(){
    </div>
 
    <div class="card stack"><h2>Back-up</h2>
-     <p class="note">Een back-up bevat al je transacties, regels, budgetten en doelen${D.pw?', versleuteld met je wachtwoord':''}. Handig om over te zetten naar een ander apparaat.</p>
+     <p class="note">Een back-up bevat al je transacties, regels, budgetten en doelen${getPw()?', versleuteld met je wachtwoord':''}. Handig om over te zetten naar een ander apparaat.</p>
      <div class="row"><button data-act="backup">Back-up downloaden</button><button data-act="backupcopy">Kopiëren als tekst</button>
        <label class="btn" for="restorefile">Back-up terugzetten…</label><button data-act="restorepaste">Tekst plakken</button></div>
      ${ui.backupText?`<textarea id="backuptext" readonly aria-label="Back-up">${esc(ui.backupText)}</textarea><p class="note">Selecteer alles en kopieer, als de knop niet werkte.</p>`:''}
@@ -1570,10 +1628,15 @@ function viewSettings(){
        <div class="row"><button class="btn-danger" data-act="restoredo">Vervang alles door deze back-up</button><button data-act="restorecancel">Annuleren</button></div>`:''}
    </div>
 
-   <div class="card stack"><h2>Versleuteling</h2>
-     <p class="note">Met een wachtwoord worden back-ups en je Dropbox-bestand versleuteld. Zonder wachtwoord kan niemand ze lezen, ook Dropbox niet. Het wachtwoord blijft op dit apparaat; vul op je andere apparaten hetzelfde in. Kwijt = kwijt.</p>
-     <div class="row"><input id="pw" type="password" autocomplete="new-password" placeholder="${D.pw?'•••••••• (ingesteld)':'Wachtwoord'}" aria-label="Wachtwoord">
-       <button data-act="setpw">${D.pw?'Wijzigen':'Instellen'}</button>${D.pw?'<button data-act="clearpw">Verwijderen</button>':''}</div>
+   <div class="card stack" id="lockcard"><h2>Vergrendeling met wachtwoord</h2>
+     ${LK?`<p><span class="in">✓ Aan.</span> Kasboek vraagt bij het openen om je wachtwoord en vergrendelt na ${AUTOLOCK_MIN} minuten niet gebruiken. Je gegevens op dit apparaat, je back-ups en je Dropbox-bestand zijn versleuteld.</p>
+       <div class="row"><button data-act="locknow">Nu vergrendelen</button></div>
+       <div class="stack-s"><label class="note" for="lpw1">Wachtwoord wijzigen</label><div class="row"><input id="lpw1" type="password" autocomplete="new-password" placeholder="Nieuw wachtwoord"><input id="lpw2" type="password" autocomplete="new-password" placeholder="Nog een keer"><button data-act="lockchange">Wijzigen</button></div></div>
+       ${ui.lockOff?`<div class="row"><span>Vergrendeling uitzetten? Je gegevens staan dan weer onversleuteld op dit apparaat.</span><button class="btn-danger btn-small" data-act="lockoff2">Ja, uitzetten</button><button class="btn-small" data-act="lockoff0">Annuleren</button></div>`:`<div><button class="btn-small" data-act="lockoff1">Vergrendeling uitzetten</button></div>`}`
+     :!(window.crypto&&crypto.subtle)?`<p class="note">Vergrendeling werkt alleen als Kasboek via een beveiligde verbinding (https) is geopend, zoals op GitHub Pages.</p>`
+     :`<p class="note">Met een wachtwoord moet je Kasboek openen met dat wachtwoord. Je gegevens worden versleuteld opgeslagen: zonder wachtwoord kan niemand ze lezen, ook niet als iemand je telefoon of laptop gebruikt. Back-ups en het Dropbox-bestand worden met hetzelfde wachtwoord versleuteld. Gebruik op je andere apparaten hetzelfde wachtwoord.</p>
+       <p class="note"><b>Onthoud het goed.</b> Ben je het kwijt, dan kun je je gegevens niet meer openen en moet je je afschriften opnieuw inladen.</p>
+       <div class="row"><input id="lpw1" type="password" autocomplete="new-password" placeholder="Wachtwoord (min. 6 tekens)"><input id="lpw2" type="password" autocomplete="new-password" placeholder="Nog een keer"><button class="btn-primary" data-act="lockon">Vergrendeling aanzetten</button></div>`}
    </div>
 
    <div class="card stack"><h2>Nieuwe regel</h2>
@@ -1609,7 +1672,7 @@ function viewSettings(){
 function dropboxPanel(redirect){
   if(IN_FRAME) return `<p class="note">Dropbox werkt in de versie op GitHub Pages, niet in deze voorbeeldweergave. Daar staat je Kasboek dan automatisch in je eigen Dropbox, zodat je laptop en telefoon hetzelfde zien.</p>`;
   if(dbxConnected()) return `<div class="row"><span class="status ${D.syncErr?'err':'ok'}"><i></i>${D.syncErr?esc(D.syncErr):'Gekoppeld'+(D.lastSync?' · laatst gesynchroniseerd '+new Date(D.lastSync).toLocaleString('nl-NL',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'')}</span></div>
-     <p class="note">Wijzigingen gaan vanzelf naar <span class="num">Apps/&lt;naam van je app&gt;/kasboek.json</span> in je Dropbox. Bij het openen haalt Kasboek de nieuwste versie op en voegt die samen.${D.pw?' Het bestand is versleuteld.':' Tip: stel hieronder een wachtwoord in, dan is het bestand versleuteld.'}</p>
+     <p class="note">Wijzigingen gaan vanzelf naar <span class="num">Apps/&lt;naam van je app&gt;/kasboek.json</span> in je Dropbox. Bij het openen haalt Kasboek de nieuwste versie op en voegt die samen.${getPw()?' Het bestand is versleuteld.':' Tip: zet hieronder de vergrendeling aan, dan is het bestand versleuteld.'}</p>
      <div class="row"><button class="btn-primary" data-act="dbxsync">Nu synchroniseren</button><button data-act="dbxoff">Ontkoppelen</button></div>`;
   return `<p class="note">Koppel je eigen Dropbox, dan synchroniseert Kasboek tussen je apparaten. Eenmalig instellen:</p>
    <ol class="steps"><li>Ga op je computer naar <a href="https://www.dropbox.com/developers/apps" target="_blank" rel="noopener">dropbox.com/developers/apps</a> en kies <b>Create app</b>.</li>
@@ -1627,15 +1690,15 @@ function unb64(s){const b=atob(s);const u=new Uint8Array(b.length);for(let i=0;i
 async function deriveKey(pw,salt){const base=await crypto.subtle.importKey('raw',te.encode(pw),'PBKDF2',false,['deriveKey']);
   return crypto.subtle.deriveKey({name:'PBKDF2',salt,iterations:250000,hash:'SHA-256'},base,{name:'AES-GCM',length:256},false,['encrypt','decrypt']);}
 async function pack(obj){
-  if(!D.pw) return JSON.stringify({kasboek:2,data:obj});
+  if(!getPw()) return JSON.stringify({kasboek:2,data:obj});
   const salt=crypto.getRandomValues(new Uint8Array(16)), iv=crypto.getRandomValues(new Uint8Array(12));
-  const key=await deriveKey(D.pw,salt); const ct=new Uint8Array(await crypto.subtle.encrypt({name:'AES-GCM',iv},key,te.encode(JSON.stringify(obj))));
+  const key=await deriveKey(getPw(),salt); const ct=new Uint8Array(await crypto.subtle.encrypt({name:'AES-GCM',iv},key,te.encode(JSON.stringify(obj))));
   return JSON.stringify({kasboek:2,enc:{s:b64(salt),i:b64(iv),d:b64(ct)}});
 }
 async function unpack(text){
   const p=JSON.parse(text);
-  if(p.enc){ if(!D.pw) throw new Error('Dit bestand is versleuteld. Stel eerst je wachtwoord in bij Versleuteling.');
-    try{const key=await deriveKey(D.pw,unb64(p.enc.s));return JSON.parse(td.decode(await crypto.subtle.decrypt({name:'AES-GCM',iv:unb64(p.enc.i)},key,unb64(p.enc.d))));}
+  if(p.enc){ if(!getPw()) throw new Error('Dit bestand is versleuteld. Zet eerst de vergrendeling aan met hetzelfde wachtwoord (Instellingen).');
+    try{const key=await deriveKey(getPw(),unb64(p.enc.s));return JSON.parse(td.decode(await crypto.subtle.decrypt({name:'AES-GCM',iv:unb64(p.enc.i)},key,unb64(p.enc.d))));}
     catch(e){throw new Error('Het wachtwoord klopt niet bij dit bestand.');} }
   if(p.data) return p.data;
   if(p.tx) return p;
@@ -1710,7 +1773,7 @@ function mergeStates(a,b){
 }
 let syncing=false, upTimer=null;
 async function dbxSync(quiet){
-  if(!dbxConnected()||syncing||IN_FRAME) return; syncing=true;
+  if(!dbxConnected()||syncing||IN_FRAME||LOCKED) return; syncing=true;
   try{
     const remoteText=await dbxDownload();
     if(remoteText){ const remote=cleanState(await unpack(remoteText)); S=mergeStates(S,remote); saveLocal(); }
@@ -1721,8 +1784,8 @@ async function dbxSync(quiet){
   finally{ syncing=false; render(); }
 }
 function scheduleUpload(){
-  if(!dbxConnected()||IN_FRAME) return; clearTimeout(upTimer);
-  upTimer=setTimeout(async()=>{ if(syncing) return scheduleUpload(); try{await dbxUpload(await pack(S));D.lastSync=Date.now();D.syncErr='';}catch(e){D.syncErr=e.message;} saveDevice(); renderSync(); },3000);
+  if(!dbxConnected()||IN_FRAME||LOCKED) return; clearTimeout(upTimer);
+  upTimer=setTimeout(async()=>{ if(LOCKED) return; if(syncing) return scheduleUpload(); try{await dbxUpload(await pack(S));D.lastSync=Date.now();D.syncErr='';}catch(e){D.syncErr=e.message;} saveDevice(); renderSync(); },3000);
 }
 
 /* ---------- PWA ---------- */
@@ -1828,6 +1891,16 @@ document.addEventListener('click',async e=>{
   if(a==='restorepaste'){ui.restore=true;render();$('#restoretext')?.focus();}
   if(a==='restorecancel'){ui.restore=false;render();}
   if(a==='restoredo'){try{const st=cleanState(await unpack($('#restoretext').value.trim()));S=st;S.savedAt=Date.now();saveLocal();scheduleUpload();ui.restore=false;ui.month=null;render();toast('Back-up teruggezet.');}catch(err){toast(err.message||'Deze tekst kon ik niet lezen.');}}
+  if(a==='lockon'||a==='lockchange'){const p1=$('#lpw1').value,p2=$('#lpw2').value;
+    if(p1.length<6){toast('Kies een wachtwoord van minstens 6 tekens.');return;} if(p1!==p2){toast('De twee wachtwoorden zijn niet hetzelfde.');return;}
+    b.disabled=true; await enableLock(p1); render(); toast(a==='lockon'?'Vergrendeling staat aan. Je gegevens zijn versleuteld.':'Wachtwoord gewijzigd.');}
+  if(a==='lockoff1'){ui.lockOff=true;render();}
+  if(a==='lockoff0'){ui.lockOff=false;render();}
+  if(a==='lockoff2'){ui.lockOff=false;disableLock();render();toast('Vergrendeling staat uit.');}
+  if(a==='locknow'||a==='lockhdr'){lockNow();}
+  if(a==='lockwipe1'){ui.wipeLock=true;renderLock();}
+  if(a==='lockwipe0'){ui.wipeLock=false;renderLock();}
+  if(a==='lockwipe2'){try{localStorage.removeItem(STORE);}catch(e){} LOCKED=false;LOCKBLOB=null;ui.wipeLock=false;S=clone(DEFAULT_STATE);S.sample=false;document.querySelector('.wrap').classList.remove('locked');afterOpen();toast('Alles is gewist. Laad je ING-bestanden opnieuw in.');}
   if(a==='setpw'){const v=$('#pw').value;if(v.length<6){toast('Kies een wachtwoord van minstens 6 tekens.');return;}D.pw=v;saveDevice();scheduleUpload();render();toast('Wachtwoord ingesteld.');}
   if(a==='clearpw'){D.pw='';saveDevice();scheduleUpload();render();toast('Wachtwoord verwijderd. Nieuwe back-ups zijn niet meer versleuteld.');}
   if(a==='dbxconnect') dbxConnect();
@@ -1876,15 +1949,23 @@ document.addEventListener('input',e=>{
   if(taxFields[t.id]){const y=ui.taxYear;S.tax[y]={...(S.tax[y]||{}),[taxFields[t.id]]:t.value};save();clearTimeout(qTimer);qTimer=setTimeout(()=>rerenderKeep(t.id),600);}
   if(t.id==='t-resman'){S.taxReserved[ui.taxYear]=t.value;save();clearTimeout(qTimer);qTimer=setTimeout(()=>rerenderKeep('t-resman'),600);}
 });
-document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&dbxConnected()&&Date.now()-D.lastSync>60000) dbxSync(true);});
+document.addEventListener('visibilitychange',()=>{
+  if(document.visibilityState==='hidden') hiddenAt=Date.now();
+  else if(LK&&hiddenAt&&Date.now()-hiddenAt>AUTOLOCK_MIN*60000){ lockNow(); return; }
+  if(LOCKED) return;if(document.visibilityState==='visible'&&dbxConnected()&&Date.now()-D.lastSync>60000) dbxSync(true);});
 
 /* ---------- Start ---------- */
+let idleT; const resetIdle=()=>{clearTimeout(idleT); if(LK) idleT=setTimeout(lockNow,AUTOLOCK_MIN*60000);};
+['click','keydown','touchstart','scroll'].forEach(ev=>document.addEventListener(ev,resetIdle,{passive:true}));
+function afterOpen(){
+  if(S.sample&&!S.tx.length) S=sampleState();
+  render(); resetIdle();
+  (async()=>{ if(IN_FRAME) return; const fresh=await dbxHandleRedirect(); if(dbxConnected()) dbxSync(!fresh); })();
+}
 load();
-if(S.sample&&!S.tx.length) S=sampleState();
 if(!D.seenNu){D.seenNu=true;D.tab='nu';saveDevice();}
 if(D.tab&&['meer','nu','overzicht','jaar','inzicht','transacties','vast','doelen','belasting','instellingen'].includes(D.tab)) ui.tab=D.tab;
-render();
-(async()=>{ if(IN_FRAME) return; const fresh=await dbxHandleRedirect(); if(dbxConnected()) dbxSync(!fresh); })();
+if(LOCKED) renderLock(); else afterOpen();
 </script>
 
 </body>

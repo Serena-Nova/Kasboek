@@ -1,10 +1,13 @@
-Kasboek — versie 2026-10-12l
+Kasboek — versie 2026-10-12m
 
 UPDATEN
 Upload alle bestanden uit deze map over de oude heen in je GitHub-repository.
 
-NIEUW
-- Op "Nu": "Vaste lasten deze maand" — elke vaste last met ✓ (al afgeschreven) of ○ (komt nog, rond welke datum).
-- Rekeningen met een wisselend bedrag (telefoon, energie) worden nu ook als vaste last herkend.
-- Opgezegde abonnementen tellen niet meer mee als vaste last.
-- Vakantie- of restaurantbetalingen die toevallig twee maanden achter elkaar kwamen, worden niet meer als vaste last gezien.
+NIEUW: vergrendeling met wachtwoord
+- Aanzetten: Meer > Instellingen > "Vergrendeling met wachtwoord".
+- Daarna vraagt Kasboek bij het openen om je wachtwoord.
+- Je gegevens staan versleuteld in je browser (AES-256). Zonder wachtwoord is het onleesbaar.
+- Na 5 minuten niet gebruiken vergrendelt Kasboek vanzelf; bovenaan staat ook een knop "Vergrendelen".
+- Back-ups en het Dropbox-bestand worden met hetzelfde wachtwoord versleuteld.
+- Gebruik op je telefoon en laptop hetzelfde wachtwoord.
+- Wachtwoord kwijt = gegevens kwijt. Dan kun je alleen alles wissen en opnieuw inladen.
