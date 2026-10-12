@@ -1,0 +1,1097 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font-size:14px}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>Kasboek</title>
+<meta name="theme-color" content="#1F6F66">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Figtree:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: één kolom, tabbladen bovenaan, kaarten alleen waar iets apart moet staan; cijfers in mono */
+:root{
+  --bg:#F1F4F2; --surface:#FFFFFF; --ink:#17302B; --muted:#5D6E69; --line:#D9E2DE;
+  --accent:#1F6F66; --accent-soft:#DCEDE8; --in:#2E7A4D; --out:#B0523A; --out-soft:#F6E2DB; --warn:#9A6614; --warn-soft:#F6EBD6;
+  --f-display:"Bricolage Grotesque", "Avenir Next", system-ui, sans-serif;
+  --f-body:"Figtree", "Segoe UI", system-ui, sans-serif;
+  --f-num:"IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --r:12px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0F1816; --surface:#16211E; --ink:#E4EDEA; --muted:#93A6A0; --line:#28362F;
+  --accent:#5DB6A9; --accent-soft:#1C3430; --in:#6BC28C; --out:#E3896C; --out-soft:#3A2420; --warn:#E0B062; --warn-soft:#33291A; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0F1816; --surface:#16211E; --ink:#E4EDEA; --muted:#93A6A0; --line:#28362F;
+  --accent:#5DB6A9; --accent-soft:#1C3430; --in:#6BC28C; --out:#E3896C; --out-soft:#3A2420; --warn:#E0B062; --warn-soft:#33291A; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.5}
+.wrap{max-width:860px;margin:0 auto;padding-inline:16px;padding-block:18px 90px}
+header.top{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap}
+h1{font-family:var(--f-display);font-weight:700;font-size:2rem;letter-spacing:-.02em;margin:0;line-height:1}
+h2{font-family:var(--f-display);font-weight:600;font-size:1.2rem;margin:0;text-wrap:balance}
+h3{font-size:.76rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:600;margin:0}
+p{margin:0}
+.sub{color:var(--muted);font-size:.9rem;margin-top:4px}
+.num{font-family:var(--f-num);font-variant-numeric:tabular-nums}
+.in{color:var(--in)} .out{color:var(--out)} .warn{color:var(--warn)}
+button,.btn{font:inherit;cursor:pointer;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--ink);padding:8px 14px;font-weight:500;text-decoration:none;display:inline-block}
+button:disabled{opacity:.45;cursor:default}
+button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-visible,label.btn:focus-within,summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.btn-primary{background:var(--accent);border-color:var(--accent);color:var(--bg)}
+.btn-danger{border-color:var(--out);color:var(--out)}
+.btn-small{padding:4px 10px;font-size:.85rem}
+.btn-link{border:none;background:none;padding:0;color:var(--accent);text-decoration:underline;font-weight:500}
+input,select,textarea{font:inherit;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:7px 10px;max-width:100%}
+textarea{width:100%;font-family:var(--f-num);font-size:.78rem;min-height:110px}
+input[type=file]{display:none}
+nav.tabs{display:flex;gap:2px;margin:18px 0 14px;overflow-x:auto;border-bottom:1px solid var(--line);scrollbar-width:none}
+nav.tabs button{border:none;border-radius:0;background:none;padding:10px 11px;color:var(--muted);border-bottom:2px solid transparent;white-space:nowrap}
+nav.tabs button[aria-selected=true]{color:var(--ink);border-bottom-color:var(--accent);font-weight:600}
+.banner{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;background:var(--warn-soft);border-radius:var(--r);padding:12px 14px;margin-top:14px}
+.banner b{color:var(--warn)}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px}
+.stack{display:flex;flex-direction:column;gap:14px}
+.stack-s{display:flex;flex-direction:column;gap:8px}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.spread{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.monthbar{display:flex;align-items:center;gap:8px}
+.monthbar .label{font-family:var(--f-display);font-weight:600;font-size:1.15rem;min-width:9.5em;text-align:center}
+.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+@media (max-width:620px){.stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:12px;min-width:0}
+.stat .v{font-family:var(--f-num);font-size:1.12rem;font-weight:500;margin-top:2px;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.alerts{display:flex;flex-direction:column;gap:0;padding:4px 16px}
+.alert{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line);background:none;border-left:none;border-right:none;border-top:none;border-radius:0;text-align:left;width:100%;font-weight:400}
+.alert:last-child{border-bottom:none}
+.alert .mark{width:8px;height:8px;border-radius:50%}
+.alert .go{color:var(--muted);font-size:1.1rem}
+.catbars{display:flex;flex-direction:column;gap:10px}
+.catbar{display:grid;grid-template-columns:minmax(0,9.5em) minmax(0,1fr) auto;gap:4px 10px;align-items:center;cursor:pointer;background:none;border:none;padding:0;text-align:left;border-radius:6px;width:100%;font-weight:400}
+.catbar .track{height:10px;background:var(--accent-soft);border-radius:5px;overflow:hidden;position:relative}
+.catbar .fill{display:block;height:100%;border-radius:5px}
+.catbar .bud{position:absolute;top:-2px;bottom:-2px;width:2px;background:var(--ink);opacity:.55}
+.catbar .name{display:flex;gap:7px;align-items:center;min-width:0}
+.catbar .name span:last-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.catbar .bnote{grid-column:2 / 4;font-size:.76rem;color:var(--muted);margin-top:-2px}
+.dot{width:9px;height:9px;border-radius:50%;flex:none}
+.chip{display:inline-flex;align-items:center;gap:6px;font-size:.8rem;padding:2px 9px;border-radius:999px;background:var(--accent-soft);white-space:nowrap}
+.chart-wrap{overflow-x:auto}
+.legend{display:flex;gap:14px;font-size:.82rem;color:var(--muted);flex-wrap:wrap}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;vertical-align:-1px}
+.txlist{display:flex;flex-direction:column}
+.tx{display:grid;grid-template-columns:4.2em minmax(0,1fr) auto;gap:4px 12px;padding:10px 0;border-bottom:1px solid var(--line);align-items:start}
+.tx:last-child{border-bottom:none}
+.tx .d{font-family:var(--f-num);font-size:.8rem;color:var(--muted);padding-top:2px}
+.tx .n{font-weight:500;overflow-wrap:anywhere}
+.tx .m{font-size:.8rem;color:var(--muted);overflow-wrap:anywhere;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.tx .a{font-family:var(--f-num);text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.tx select{grid-column:2 / 4;justify-self:start;font-size:.82rem;padding:3px 8px;border-radius:999px}
+.filters{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr) minmax(0,1fr);gap:8px}
+.filters.four{grid-template-columns:minmax(0,2fr) repeat(3,minmax(0,1fr))}
+@media (max-width:620px){.filters,.filters.four{grid-template-columns:1fr 1fr}.filters input{grid-column:1 / 3}}
+.rec{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 12px;padding:10px 0;border-bottom:1px solid var(--line)}
+.rec:last-child{border-bottom:none}
+.rec .meta{font-size:.82rem;color:var(--muted)}
+.rec .amt{text-align:right}
+.pill{font-size:.72rem;padding:1px 8px;border-radius:999px;border:1px solid var(--line);color:var(--muted);margin-left:6px;vertical-align:1px;white-space:nowrap}
+.pill.rise{border-color:var(--out);color:var(--out)}
+.form{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,12em);gap:10px 14px;align-items:center}
+.form label{font-size:.92rem}
+.form .hint{grid-column:1 / -1;font-size:.8rem;color:var(--muted);margin-top:-6px}
+@media (max-width:520px){.form{grid-template-columns:1fr}.form .hint{margin-top:-4px}}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:999px;overflow:hidden;flex-wrap:wrap}
+.seg button{border:none;border-radius:0;padding:7px 12px}
+.seg button[aria-pressed=true]{background:var(--accent);color:var(--bg)}
+.result{border-top:1px solid var(--line);margin-top:6px;padding-top:12px;display:flex;flex-direction:column;gap:6px}
+.line{display:flex;justify-content:space-between;gap:10px}
+.result .total{font-family:var(--f-display);font-size:1.3rem;font-weight:700;border-top:1px solid var(--line);padding-top:8px;margin-top:4px}
+.note{font-size:.82rem;color:var(--muted)}
+.progress{height:12px;border-radius:6px;background:var(--accent-soft);overflow:hidden}
+.progress span{display:block;height:100%;border-radius:6px;background:var(--accent)}
+.potbox{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+@media (max-width:520px){.potbox{grid-template-columns:1fr 1fr}}
+.list .item{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line)}
+.list .item:last-child{border-bottom:none}
+.list .item .mt{overflow-wrap:anywhere}
+.budgets .item{grid-template-columns:minmax(0,1fr) 8em}
+.addrule{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr) minmax(0,1.4fr) auto;gap:8px}
+.addgoal{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr) minmax(0,1.2fr) auto;gap:8px}
+@media (max-width:620px){.addrule,.addgoal{grid-template-columns:1fr 1fr}}
+.goal{display:flex;flex-direction:column;gap:8px;padding:12px 0;border-bottom:1px solid var(--line)}
+.goal:last-child{border-bottom:none}
+.goal input{width:8em}
+.acc{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:6px 10px;padding:10px 0;border-bottom:1px solid var(--line)}
+.acc:last-child{border-bottom:none}
+.acc .iban{grid-column:1 / -1;font-family:var(--f-num);font-size:.8rem;color:var(--muted)}
+details.card summary{cursor:pointer;list-style-position:outside}
+.codebox{font-family:var(--f-num);font-size:.8rem;background:var(--accent-soft);padding:6px 10px;border-radius:8px;overflow-wrap:anywhere;user-select:all}
+.status{display:inline-flex;align-items:center;gap:6px;font-size:.85rem}
+.status i{width:8px;height:8px;border-radius:50%;background:var(--muted)}
+.status.ok i{background:var(--in)} .status.err i{background:var(--out)}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(16px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:10px 14px;border-radius:12px;display:flex;gap:12px;align-items:center;max-width:calc(100% - 32px);box-shadow:0 6px 24px rgba(0,0,0,.2);z-index:10;font-size:.9rem}
+.toast button{background:transparent;color:var(--bg);border-color:var(--bg);flex:none}
+.empty{color:var(--muted);text-align:center;padding:20px 0}
+ol.steps{margin:6px 0 0;padding-left:1.2em;color:var(--muted);font-size:.9rem;display:flex;flex-direction:column;gap:4px}
+@media (prefers-reduced-motion:no-preference){.catbar .fill,.progress span{transition:width .4s ease}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div>
+      <h1>Kasboek</h1>
+      <p class="sub">Je ING-afschriften, ingedeeld. <span id="syncline"></span></p>
+    </div>
+    <label class="btn btn-primary" for="file">ING-bestand inladen</label>
+    <input type="file" id="file" accept=".csv,text/csv,text/plain" multiple>
+    <input type="file" id="restorefile" accept=".json,application/json">
+  </header>
+  <div id="banner"></div>
+
+  <nav class="tabs" role="tablist">
+    <button role="tab" data-tab="overzicht" aria-selected="true">Overzicht</button>
+    <button role="tab" data-tab="transacties">Transacties</button>
+    <button role="tab" data-tab="vast">Vaste lasten</button>
+    <button role="tab" data-tab="doelen">Budget &amp; doelen</button>
+    <button role="tab" data-tab="belasting">Royalty's &amp; belasting</button>
+    <button role="tab" data-tab="instellingen">Instellingen</button>
+  </nav>
+
+  <main id="view"></main>
+</div>
+<div id="toast" class="toast" hidden></div>
+
+<script>
+const VERSION='2026-10-11b';
+const clone=o=>JSON.parse(JSON.stringify(o));
+/* ---------- Basis ---------- */
+const STORE='kasboek.v1', LOCAL='kasboek.device';
+const eur=new Intl.NumberFormat('nl-NL',{style:'currency',currency:'EUR'});
+const eur0=new Intl.NumberFormat('nl-NL',{style:'currency',currency:'EUR',maximumFractionDigits:0});
+const MONTHS=['januari','februari','maart','april','mei','juni','juli','augustus','september','oktober','november','december'];
+const MSHORT=['jan','feb','mrt','apr','mei','jun','jul','aug','sep','okt','nov','dec'];
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const $=s=>document.querySelector(s);
+const IN_FRAME=(()=>{try{return window.self!==window.top;}catch(e){return true;}})();
+const fmtD=d=>`${+d.slice(8)} ${MSHORT[+d.slice(5,7)-1]}`;
+const todayISO=()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;};
+
+const CATS=[
+ ['Inkomsten','#3E8E5E'],['Royalties','#7A5CC2'],['Boodschappen','#C9822B'],['Wonen','#2F6E9E'],
+ ['Energie & water','#D0A21F'],['Internet & telefoon','#3C9FA8'],['Verzekeringen','#5A7A8C'],['Abonnementen','#C25C8E'],
+ ['Vervoer','#8C6A4A'],['Kinderen','#E07A5F'],['Gezondheid','#4FA37A'],['Uit eten','#D46A3A'],
+ ['Winkelen','#9C7BB0'],['Belastingen','#A04848'],['Schrijfkosten','#6A8D3A'],['Contant opgenomen','#7F8C88'],
+ ['Sparen','#1F6F66'],['Belastingreservering','#4C6FB0'],['Eigen rekening','#B3BDB9'],['Overig','#9AA6A2']
+];
+const SAVING=new Set(['Sparen','Belastingreservering']);   // apart zetten, geen uitgave
+const IGNORE=new Set(['Eigen rekening']);                  // overboeking tussen eigen betaalrekeningen
+const ACC_TYPES={betaal:'Betaalrekening',gezamenlijk:'Gezamenlijke rekening',spaar:'Spaarrekening',pot:'Belastingpot (spaar)'};
+const isSaveAcc=a=>a&&(a.type==='spaar'||a.type==='pot');
+
+const DEFAULT_RULES=[
+ ['spaarrekening','any','Sparen'],['oranje spaar','any','Sparen'],
+ ['amazon media eu','in','Royalties'],['kindle direct','in','Royalties'],['kdp','in','Royalties'],['draft2digital','in','Royalties'],
+ ['kobo','in','Royalties'],['ingram','in','Royalties'],['google payment','in','Royalties'],['books2read','in','Royalties'],['bookfunnel','in','Royalties'],
+ ['salaris','in','Inkomsten'],['svb','in','Inkomsten'],['uwv','in','Inkomsten'],['belastingdienst','in','Inkomsten'],
+ ['belastingdienst','out','Belastingen'],['gemeente','out','Belastingen'],['waterschap','out','Belastingen'],['hoogheemraadschap','out','Belastingen'],
+ ['albert heijn','out','Boodschappen'],['jumbo','out','Boodschappen'],['lidl','out','Boodschappen'],['aldi','out','Boodschappen'],['plus ','out','Boodschappen'],
+ ['dirk ','out','Boodschappen'],['hoogvliet','out','Boodschappen'],['picnic','out','Boodschappen'],['ekoplaza','out','Boodschappen'],['vomar','out','Boodschappen'],['coop ','out','Boodschappen'],
+ ['hypotheek','out','Wonen'],['huur','out','Wonen'],['woonstichting','out','Wonen'],['vve','out','Wonen'],['ikea','out','Wonen'],['praxis','out','Wonen'],['gamma','out','Wonen'],['karwei','out','Wonen'],
+ ['vattenfall','out','Energie & water'],['eneco','out','Energie & water'],['essent','out','Energie & water'],['greenchoice','out','Energie & water'],['vandebron','out','Energie & water'],
+ ['budget energie','out','Energie & water'],['dunea','out','Energie & water'],['evides','out','Energie & water'],['vitens','out','Energie & water'],['oxxio','out','Energie & water'],
+ ['ziggo','out','Internet & telefoon'],['kpn','out','Internet & telefoon'],['odido','out','Internet & telefoon'],['vodafone','out','Internet & telefoon'],['simyo','out','Internet & telefoon'],['youfone','out','Internet & telefoon'],['lebara','out','Internet & telefoon'],
+ ['zilveren kruis','out','Verzekeringen'],['menzis','out','Verzekeringen'],['vgz','out','Verzekeringen'],['zorgverzekeraar','out','Verzekeringen'],['centraal beheer','out','Verzekeringen'],
+ ['interpolis','out','Verzekeringen'],['ohra','out','Verzekeringen'],['fbto','out','Verzekeringen'],['ditzo','out','Verzekeringen'],['allianz','out','Verzekeringen'],['univ','out','Verzekeringen'],
+ ['netflix','out','Abonnementen'],['spotify','out','Abonnementen'],['disney','out','Abonnementen'],['videoland','out','Abonnementen'],['apple.com','out','Abonnementen'],['youtube','out','Abonnementen'],
+ ['audible','out','Abonnementen'],['storytel','out','Abonnementen'],['kindle unlimited','out','Abonnementen'],['patreon','out','Abonnementen'],['anthropic','out','Abonnementen'],['openai','out','Abonnementen'],['microsoft','out','Abonnementen'],['adobe','out','Abonnementen'],['dropbox','out','Abonnementen'],
+ ['squarespace','out','Schrijfkosten'],['canva','out','Schrijfkosten'],['github','out','Schrijfkosten'],['bookbrush','out','Schrijfkosten'],['scrivener','out','Schrijfkosten'],
+ ['ns groep','out','Vervoer'],['ns reizigers','out','Vervoer'],['ov-chipkaart','out','Vervoer'],['translink','out','Vervoer'],['htm','out','Vervoer'],['shell','out','Vervoer'],['esso','out','Vervoer'],
+ ['tinq','out','Vervoer'],['tango','out','Vervoer'],['texaco','out','Vervoer'],['q-park','out','Vervoer'],['parkeren','out','Vervoer'],['anwb','out','Vervoer'],
+ ['kinderopvang','out','Kinderen'],['bso','out','Kinderen'],['intertoys','out','Kinderen'],['bart smit','out','Kinderen'],['school','out','Kinderen'],
+ ['apotheek','out','Gezondheid'],['tandarts','out','Gezondheid'],['huisarts','out','Gezondheid'],['fysio','out','Gezondheid'],
+ ['thuisbezorgd','out','Uit eten'],['uber eats','out','Uit eten'],['deliveroo','out','Uit eten'],['mcdonald','out','Uit eten'],['starbucks','out','Uit eten'],['restaurant','out','Uit eten'],['domino','out','Uit eten'],
+ ['bol.com','out','Winkelen'],['zalando','out','Winkelen'],['coolblue','out','Winkelen'],['amazon','out','Winkelen'],['temu','out','Winkelen'],['action','out','Winkelen'],['hema','out','Winkelen'],['wehkamp','out','Winkelen'],['kruidvat','out','Winkelen'],
+ ['geldautomaat','out','Contant opgenomen']
+].map(([match,dir,cat])=>({match,dir,cat}));
+
+const PLATFORMS=[['amazon','Amazon KDP'],['kindle','Amazon KDP'],['kdp','Amazon KDP'],['draft2digital','Draft2Digital'],['books2read','Draft2Digital'],['kobo','Kobo'],['ingram','IngramSpark'],['google','Google Play Books'],['apple','Apple Books'],['bookfunnel','BookFunnel'],['payhip','Payhip'],['patreon','Patreon'],['ko-fi','Ko-fi']];
+const PLAT_COLORS=['#7A5CC2','#3C9FA8','#C9822B','#4FA37A','#C25C8E','#2F6E9E','#8C6A4A','#9AA6A2'];
+
+/* Belasting 2026 (box 1, onder AOW-leeftijd) */
+const TAX={year:2026,brackets:[[38883,.3575],[78426,.3756],[Infinity,.495]],za:1200,mkb:.127,deductCap:.3756,zvw:.0485,zvwMax:79409};
+
+const DEFAULT_STATE={tx:[],userRules:[],disabledBuiltins:[],extraCats:[],overrides:{},tax:{},sample:true,
+  budgets:{},goals:[],accounts:{},taxReserved:{},period:{mode:'cal',day:1,payer:''},savedAt:0,wipedAt:0};
+let S=clone(DEFAULT_STATE);
+let D={dbxKey:'',dbxRefresh:'',dbxAccess:'',dbxExp:0,pw:'',lastSync:0,syncErr:''}; // alleen dit apparaat
+let ui={tab:'overzicht',month:null,q:'',fcat:'',fmonth:'',facc:'',acc:'',limit:150,taxYear:null,wipe:false,restore:false,backupText:''};
+
+function load(){
+  try{const r=localStorage.getItem(STORE);if(r){S=cleanState(JSON.parse(r));}}catch(e){}
+  try{const r=localStorage.getItem(LOCAL);if(r)D={...D,...JSON.parse(r)};}catch(e){}
+}
+function saveLocal(){try{localStorage.setItem(STORE,JSON.stringify(S));}catch(e){}}
+function saveDevice(){try{localStorage.setItem(LOCAL,JSON.stringify(D));}catch(e){}}
+function save(){S.savedAt=Date.now();saveLocal();scheduleUpload();}
+
+/* ---------- Rekeningen & categoriseren ---------- */
+const normIban=s=>String(s||'').replace(/\s/g,'').toUpperCase();
+function allCats(){return [...CATS,...S.extraCats.map(c=>[c,'#8A8F6A'])];}
+function catColor(c){const f=allCats().find(x=>x[0]===c);return f?f[1]:'#9AA6A2';}
+function normName(n){return String(n||'').toLowerCase().replace(/\d+/g,' ').replace(/[^\p{L}\s.&'-]/gu,' ').replace(/\s+/g,' ').trim();}
+function activeRules(){return [...S.userRules,...DEFAULT_RULES.filter(r=>!S.disabledBuiltins.includes(r.match+'|'+r.dir))];}
+function categorize(t){
+  if(S.overrides[t.id]) return S.overrides[t.id];
+  const own=S.accounts[normIban(t.account)], ctr=S.accounts[normIban(t.counter)];
+  if(ctr){ if(isSaveAcc(own)) return 'Eigen rekening';
+           if(ctr.type==='pot') return 'Belastingreservering';
+           if(ctr.type==='spaar') return 'Sparen';
+           return 'Eigen rekening'; }
+  const hay=(' '+t.name+' '+t.desc+' '+t.type+' '+t.counter+' ').toLowerCase();
+  for(const r of activeRules()){
+    if(r.dir==='in'&&t.amount<0) continue; if(r.dir==='out'&&t.amount>0) continue;
+    if(hay.includes(r.match.toLowerCase())) return r.cat;
+  }
+  return t.amount>0?'Inkomsten':'Overig';
+}
+let TX=[];
+function rebuild(){buildPeriods();TX=S.tx.map(t=>({...t,cat:categorize(t),mk:periodKey(t.date)})).sort((a,b)=>b.date.localeCompare(a.date));}
+
+/* ---------- Periodes: waar begint "de maand" ---------- */
+let PERIODS=[], PIDX={};
+function addDays(iso,n){const d=new Date(iso+'T12:00:00Z');d.setUTCDate(d.getUTCDate()+n);return d.toISOString().slice(0,10);}
+function addMonths(y,m,n){const t=y*12+(m-1)+n;return [Math.floor(t/12),t%12+1];}
+const dim=(y,m)=>new Date(Date.UTC(y,m,0)).getUTCDate();
+const ymd=(y,m,d)=>`${y}-${String(m).padStart(2,'0')}-${String(Math.min(d,dim(y,m))).padStart(2,'0')}`;
+const payerKey=t=>normName(t.name)||normName(t.desc);
+function payerCandidates(){
+  const g={};for(const t of S.tx){if(t.amount<=0)continue;const k=payerKey(t);if(!k)continue;(g[k]=g[k]||{key:k,name:t.name||t.desc,dates:[],amts:[]});g[k].dates.push(t.date);g[k].amts.push(t.amount);}
+  return Object.values(g).filter(x=>x.dates.length>=2).map(x=>({...x,day:Math.round(median(x.dates.map(d=>+d.slice(8)))),amount:median(x.amts),total:x.amts.reduce((a,b)=>a+b,0)}))
+    .sort((a,b)=>b.amount-a.amount).slice(0,8);
+}
+function salaryDates(){const P=S.period||{};if(P.mode!=='salary'||!P.payer)return [];return [...new Set(S.tx.filter(t=>t.amount>0&&payerKey(t)===P.payer).map(t=>t.date))].sort();}
+function buildPeriods(){
+  const P=S.period||{mode:'cal'}; const today=todayISO();
+  const dates=S.tx.map(t=>t.date).sort();
+  const minD=dates[0]||today, maxD=[dates[dates.length-1]||today,today].sort()[1];
+  let nominal=1, real=[];
+  if(P.mode==='day') nominal=Math.min(28,Math.max(1,+P.day||1));
+  if(P.mode==='salary'){ real=salaryDates(); nominal=real.length?Math.round(median(real.map(d=>+d.slice(8)))):Math.min(28,Math.max(1,+P.day||1)); }
+  // vaste grenzen rond de hele periode, plus de echte salarisdatums
+  const b=new Set(); let [y,m]=addMonths(+minD.slice(0,4),+minD.slice(5,7),-1);
+  const stop=addDays(maxD,62);
+  while(ymd(y,m,1)<=stop){ const d=ymd(y,m,nominal);
+    if(!real.length||d<addDays(real[0],-20)||d>addDays(real[real.length-1],20)) b.add(d);
+    [y,m]=addMonths(y,m,1); }
+  real.forEach(d=>b.add(d));
+  const starts=[...b].sort();
+  PERIODS=[];PIDX={};const used=new Set();
+  starts.forEach((st,i)=>{
+    const end=i<starts.length-1?addDays(starts[i+1],-1):addDays(ymd(...addMonths(+st.slice(0,4),+st.slice(5,7),1),+st.slice(8)),-1);
+    // sleutel = de maand waarin de "bedoelde" startdag valt (vangt vervroegd salaris op)
+    const sy=+st.slice(0,4),sm=+st.slice(5,7);
+    let best=null;for(const k of [-1,0,1]){const [yy,mm]=addMonths(sy,sm,k);const c=ymd(yy,mm,nominal);const dd=Math.abs(daysBetween(c,st));if(!best||dd<best.dd)best={dd,key:c.slice(0,7)};}
+    let key=best.key; while(used.has(key)){const [yy,mm]=addMonths(+key.slice(0,4),+key.slice(5,7),1);key=`${yy}-${String(mm).padStart(2,'0')}`;} used.add(key);
+    const mid=addDays(st,Math.floor(daysBetween(st,end)/2));
+    const per={key,start:st,end,mid,name:MONTHS[+mid.slice(5,7)-1]+' '+mid.slice(0,4),short:MSHORT[+mid.slice(5,7)-1],year:+mid.slice(0,4)};
+    PERIODS.push(per);PIDX[key]=per;
+  });
+}
+function periodOf(date){let lo=0,hi=PERIODS.length-1,r=PERIODS[0];while(lo<=hi){const md=(lo+hi)>>1;if(PERIODS[md].start<=date){r=PERIODS[md];lo=md+1;}else hi=md-1;}return r;}
+const periodKey=date=>{const p=periodOf(date);return p?p.key:date.slice(0,7);};
+const isCal=()=>!S.period||S.period.mode==='cal';
+const pRange=k=>{const p=PIDX[k];return p?`${fmtD(p.start)} – ${fmtD(p.end)}`:'';};
+function periodSummary(){const P=S.period||{};if(P.mode==='day')return `Maand begint op de ${P.day}e`;
+  if(P.mode==='salary'){const c=payerCandidates().find(x=>x.key===P.payer);return c?`Maand begint als ${c.name} binnenkomt`:'Maand begint bij salaris';}
+  return 'Maand begint op de 1e';}
+function inScope(t,useFilter=true){
+  const a=S.accounts[normIban(t.account)];
+  if(isSaveAcc(a)) return false;
+  if(useFilter&&ui.acc&&normIban(t.account)!==ui.acc) return false;
+  return true;
+}
+const spendAccounts=()=>Object.entries(S.accounts).filter(([,a])=>!isSaveAcc(a));
+function registerAccounts(){
+  for(const t of S.tx){const i=normIban(t.account); if(i&&!S.accounts[i]) S.accounts[i]={label:'Rekening …'+i.slice(-4),type:'betaal'};}
+}
+
+/* ---------- CSV inlezen (ING) ---------- */
+function parseCSV(text){
+  text=text.replace(/^﻿/,'');
+  const first=text.split(/\r?\n/)[0]||'';
+  const delim=(first.split(';').length>first.split(',').length)?';':',';
+  const rows=[];let row=[],f='',q=false;
+  for(let i=0;i<text.length;i++){
+    const c=text[i];
+    if(q){ if(c==='"'){ if(text[i+1]==='"'){f+='"';i++;} else q=false;} else f+=c; }
+    else if(c==='"') q=true;
+    else if(c===delim){row.push(f);f='';}
+    else if(c==='\n'||c==='\r'){ if(c==='\r'&&text[i+1]==='\n') i++; row.push(f);rows.push(row);row=[];f=''; }
+    else f+=c;
+  }
+  if(f!==''||row.length){row.push(f);rows.push(row);}
+  return rows.filter(r=>r.some(x=>x.trim()!==''));
+}
+function parseAmount(s){
+  s=String(s).trim().replace(/[€\s]/g,'');
+  if(s.includes(',')&&s.includes('.')) s=s.replace(/\./g,'').replace(',','.'); else s=s.replace(',','.');
+  return parseFloat(s);
+}
+function parseDate(s){
+  s=String(s).trim(); let m;
+  if(m=s.match(/^(\d{4})(\d{2})(\d{2})$/)) return `${m[1]}-${m[2]}-${m[3]}`;
+  if(m=s.match(/^(\d{4})-(\d{2})-(\d{2})/)) return `${m[1]}-${m[2]}-${m[3]}`;
+  if(m=s.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{4})$/)) return `${m[3]}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`;
+  return null;
+}
+function hash(s){let h=5381;for(let i=0;i<s.length;i++)h=((h<<5)+h+s.charCodeAt(i))|0;return (h>>>0).toString(36);}
+function ingRowsToTx(rows){
+  const head=rows[0].map(h=>h.toLowerCase().trim());
+  const col=(...names)=>head.findIndex(h=>names.some(n=>h===n||h.startsWith(n)));
+  const iD=col('datum','date'),iN=col('naam','name'),iR=col('rekening','account'),iT=col('tegenrekening','counterparty'),
+        iC=col('code'),iAB=col('af bij','debit/credit'),iB=col('bedrag','amount'),iM=col('mutatiesoort','transaction type'),
+        iMed=col('mededelingen','notifications','omschrijving'),iS=col('saldo','resulting balance');
+  if(iD<0||iB<0) throw new Error('Dit lijkt geen ING-export: ik vind geen kolommen "Datum" en "Bedrag".');
+  const out=[];
+  for(const r of rows.slice(1)){
+    const date=parseDate(r[iD]); if(!date) continue;
+    let amt=parseAmount(r[iB]); if(isNaN(amt)) continue;
+    const ab=(iAB>=0?r[iAB]:'').trim().toLowerCase();
+    if(ab==='af'||ab==='debit') amt=-Math.abs(amt); else if(ab==='bij'||ab==='credit') amt=Math.abs(amt);
+    const t={date,name:(r[iN]||'').trim(),account:iR>=0?(r[iR]||'').trim():'',counter:iT>=0?(r[iT]||'').trim():'',code:iC>=0?r[iC]:'',
+      amount:Math.round(amt*100)/100,type:iM>=0?(r[iM]||'').trim():'',desc:iMed>=0?(r[iMed]||'').trim():'',saldo:iS>=0?r[iS]:''};
+    t.id=hash([t.date,t.amount,t.name,t.desc,t.saldo,t.counter,t.account].join('|'));
+    out.push(t);
+  }
+  return out;
+}
+function readFile(file,check=true){
+  return new Promise((res,rej)=>{
+    const fr=new FileReader();
+    fr.onload=()=>{const t=fr.result; if(check&&t.includes('\uFFFD')){const f2=new FileReader();f2.onload=()=>res(f2.result);f2.onerror=rej;f2.readAsText(file,'windows-1252');} else res(t);};
+    fr.onerror=rej; fr.readAsText(file,'utf-8');
+  });
+}
+$('#file').addEventListener('change',async e=>{
+  const files=[...e.target.files]; e.target.value='';
+  let added=0,dup=0;
+  try{
+    if(S.sample){S.tx=[];S.overrides={};S.sample=false;}
+    const ids=new Set(S.tx.map(t=>t.id));
+    for(const f of files){
+      const tx=ingRowsToTx(parseCSV(await readFile(f)));
+      for(const t of tx){ if(ids.has(t.id)) dup++; else {ids.add(t.id);S.tx.push(t);added++;} }
+    }
+    registerAccounts(); save(); ui.month=null; ui.taxYear=null; render();
+    const accs=Object.keys(S.accounts).length;
+    toast(`${added} transacties ingelezen${dup?`, ${dup} stonden er al in`:''}.${accs>1?' Kijk bij Instellingen welke rekening wat is.':''}`);
+  }catch(err){ render(); toast(err.message||'Dit bestand kon ik niet lezen. Kies in Mijn ING het formaat CSV (puntkomma).'); }
+});
+
+/* ---------- Voorbeelddata ---------- */
+function sampleData(){
+  let seed=7;const rnd=()=>(seed=(seed*16807)%2147483647)/2147483647;
+  const tx=[];const add=(d,name,amt,type,desc)=>{const t={date:d,name,amount:Math.round(amt*100)/100,type,desc:desc||'',account:'',counter:'',code:'',saldo:'',sample:true};t.id='s'+hash(d+name+t.amount+tx.length);tx.push(t);};
+  const ms=['2026-04','2026-05','2026-06','2026-07','2026-08','2026-09'];
+  ms.forEach((m,i)=>{
+    add(m+'-24','Werkgever Voorbeeld BV',2850,'Overschrijving','Salaris');
+    add(m+'-27','Amazon Media EU Sarl',180+rnd()*260,'Overschrijving','KDP royalties');
+    if(i%2===0) add(m+'-15','Draft2Digital LLC',40+rnd()*60,'Overschrijving','Royalty payment');
+    if(i%3===1) add(m+'-11','Rakuten Kobo Inc',25+rnd()*30,'Overschrijving','Kobo Writing Life');
+    add(m+'-01','Woonstichting Voorbeeld',-985,'Incasso','Huur');
+    add(m+'-03','Vattenfall Klantenservice',-142,'Incasso','Termijnbedrag energie');
+    add(m+'-05','Ziggo Services BV',-62.50,'Incasso','Internet en tv');
+    add(m+'-01','Zilveren Kruis Zorgverzekeringen',-276.40,'Incasso','Premie zorgverzekering');
+    add(m+'-12','Netflix International B.V.',i<4?-13.99:-15.99,'Incasso','');
+    add(m+'-19','Spotify AB',-17.99,'Incasso','Premium Family');
+    add(m+'-22','Dunea',-21.30,'Incasso','Water');
+    add(m+'-25','Oranje Spaarrekening',-250,'Online bankieren','Naar spaarrekening');
+    add(m+'-28','Naar Belastingpot',-100,'Online bankieren','Belasting royalty');
+    for(let k=0;k<7;k++) add(`${m}-${String(2+k*4).padStart(2,'0')}`, rnd()<.65?'Albert Heijn 1567':'Jumbo Voorburg', -(28+rnd()*70),'Betaalautomaat','');
+    add(m+'-10','NS Groep IZ NS Reizigers',-(18+rnd()*40),'Betaalautomaat','');
+    if(rnd()<.7) add(m+'-16','Thuisbezorgd.nl',-(24+rnd()*20),'iDEAL','');
+    add(m+'-20','bol.com',-(15+rnd()*80),'iDEAL','');
+    if(i%3===0) add(m+'-08','Centraal Beheer',-118.20,'Incasso','Kwartaalpremie inboedel en aansprakelijkheid');
+    if(m==='2026-04'||m==='2026-07') add(m+'-28','Gemeente Leidschendam-Voorburg',-96.75,'Incasso','Termijn gemeentelijke belastingen');
+  });
+  add('2026-05-14','Squarespace Inc.',-216,'Betaalautomaat','Jaarabonnement website');
+  add('2026-06-03','Reedsy Ltd',-340,'iDEAL','Editing');
+  return tx;
+}
+function sampleState(){
+  return {...clone(DEFAULT_STATE),tx:sampleData(),sample:true,
+    userRules:[{match:'belastingpot',dir:'out',cat:'Belastingreservering'},{match:'reedsy',dir:'out',cat:'Schrijfkosten'}],
+    budgets:{'Boodschappen':600,'Uit eten':50,'Winkelen':80},
+    goals:[{id:'g1',name:'Vakantie',target:1500,saved:600,by:'2027-06'}]};
+}
+
+/* ---------- Berekeningen ---------- */
+const months=()=>[...new Set(TX.filter(t=>inScope(t)).map(t=>t.mk))].sort();
+const mLabel=mk=>PIDX[mk]?PIDX[mk].name:(MONTHS[+mk.slice(5,7)-1]+' '+mk.slice(0,4));
+const mShort=mk=>PIDX[mk]?PIDX[mk].short:MSHORT[+mk.slice(5,7)-1];
+function monthSum(mk){
+  let inc=0,out=0,saved=0;const bycat={};
+  for(const t of TX){ if(t.mk!==mk||!inScope(t)||IGNORE.has(t.cat)) continue;
+    if(SAVING.has(t.cat)){saved+=-t.amount;continue;}
+    if(t.amount>0) inc+=t.amount; else {out+=-t.amount;bycat[t.cat]=(bycat[t.cat]||0)-t.amount;}
+  }
+  return {inc,out,saved,bycat};
+}
+function daysBetween(a,b){return Math.round((new Date(b)-new Date(a))/864e5);}
+function median(a){const s=[...a].sort((x,y)=>x-y);const n=s.length;return n?(n%2?s[(n-1)/2]:(s[n/2-1]+s[n/2])/2):0;}
+function recurring(){
+  const groups={};
+  for(const t of TX){ if(t.amount>=0||!inScope(t)||SAVING.has(t.cat)||IGNORE.has(t.cat)) continue;
+    const k=normName(t.name)||normName(t.desc); if(!k) continue; (groups[k]=groups[k]||[]).push(t); }
+  const res=[];
+  for(const list of Object.values(groups)){
+    if(list.length<2) continue;
+    const sorted=[...list].sort((a,b)=>a.date.localeCompare(b.date));
+    const gaps=[];for(let i=1;i<sorted.length;i++) gaps.push(daysBetween(sorted[i-1].date,sorted[i].date));
+    const g=median(gaps); const amts=sorted.map(t=>-t.amount); const med=median(amts);
+    const spread=Math.max(...amts.map(a=>Math.abs(a-med)))/med;
+    let freq=null;
+    if(g>=25&&g<=36&&sorted.length>=3&&spread<=.2) freq='maand';
+    else if(g>=80&&g<=100&&spread<=.25) freq='kwartaal';
+    else if(g>=170&&g<=195&&spread<=.25) freq='halfjaar';
+    else if(g>=350&&g<=380&&spread<=.25) freq='jaar';
+    if(!freq) continue;
+    const last=sorted[sorted.length-1]; const lastAmt=-last.amount;
+    const prev=amts.slice(0,-1); const prevMed=median(prev);
+    const rise=(prev.length>=2&&lastAmt>prevMed*1.03&&lastAmt-prevMed>=0.5)?{from:prevMed,to:lastAmt}:null;
+    const amount=rise?lastAmt:med;
+    const factor={maand:1,kwartaal:1/3,halfjaar:1/6,jaar:1/12}[freq];
+    const next=new Date(last.date); next.setDate(next.getDate()+Math.round(g));
+    res.push({name:last.name,cat:last.cat,freq,amount,monthly:amount*factor,last:last.date,next:next.toISOString().slice(0,10),count:sorted.length,rise});
+  }
+  return res.sort((a,b)=>b.monthly-a.monthly);
+}
+function platformOf(t){const h=(t.name+' '+t.desc).toLowerCase();for(const [k,n] of PLATFORMS) if(h.includes(k)) return n; return t.name||'Onbekend';}
+function royaltiesFor(year){return TX.filter(t=>t.cat==='Royalties'&&t.amount>0&&inScope(t,false)&&t.date.startsWith(String(year)));}
+function taxOn(x){let t=0,prev=0;for(const [lim,r] of TAX.brackets){if(x>prev){t+=(Math.min(x,lim)-prev)*r;}prev=lim;}return t;}
+function taxCalc(year){
+  const st=S.tax[year]||{};
+  const auto=royaltiesFor(year).reduce((s,t)=>s+t.amount,0);
+  const costTx=TX.filter(t=>t.cat==='Schrijfkosten'&&t.amount<0&&inScope(t,false)&&t.date.startsWith(String(year)));
+  const autoCost=costTx.reduce((s,t)=>s-t.amount,0);
+  const other=+st.other||0, extra=+st.extra||0, prepaid=+st.prepaid||0;
+  const costs=st.costs===undefined||st.costs===''?autoCost:+st.costs;
+  const mode=st.mode||'overig', za=st.za!==false;
+  const gross=auto+extra; const profit=Math.max(0,gross-costs);
+  let taxable=profit, zaUsed=0, mkbUsed=0;
+  if(mode==='onderneming'){ zaUsed=za?Math.min(TAX.za,profit):0; const a=profit-zaUsed; mkbUsed=a*TAX.mkb; taxable=a-mkbUsed; }
+  let ib=taxOn(other+taxable)-taxOn(other);
+  const ded=profit-taxable; const topPart=Math.max(0,Math.min(ded,(other+profit)-TAX.brackets[1][0]));
+  ib+=topPart*(TAX.brackets[2][1]-TAX.deductCap);
+  const zvw=TAX.zvw*Math.min(taxable,Math.max(0,TAX.zvwMax-other));
+  const total=ib+zvw; const rate=gross?total/gross:0;
+  const reservedTx=TX.filter(t=>t.cat==='Belastingreservering'&&inScope(t,false)&&t.date.startsWith(String(year))).reduce((s,t)=>s-t.amount,0);
+  const reservedManual=+(S.taxReserved[year]||0);
+  return {auto,autoCost,costTx,other,extra,costs,mode,za,gross,profit,taxable,zaUsed,mkbUsed,ib,zvw,total,rate,prepaid,due:total-prepaid,st,reservedTx,reservedManual,reserved:reservedTx+reservedManual+prepaid};
+}
+function goalMonthly(g){
+  const [y,m]=g.by.split('-').map(Number); const n=new Date(); const left=Math.max(1,(y-n.getFullYear())*12+(m-(n.getMonth()+1))+1);
+  return {left,per:Math.max(0,(+g.target||0)-(+g.saved||0))/left};
+}
+
+/* ---------- Weergave ---------- */
+function render(){
+  rebuild();
+  document.querySelectorAll('nav.tabs button').forEach(b=>b.setAttribute('aria-selected',b.dataset.tab===ui.tab));
+  $('#banner').innerHTML=S.sample?`<div class="banner"><div><b>Voorbeeldgegevens.</b> Verzonnen transacties om te laten zien hoe het werkt. Laad je eigen ING-bestand om ze te vervangen.</div><label class="btn btn-small" for="file">Eigen bestand kiezen</label></div>`:'';
+  renderSync();
+  const v=$('#view');
+  if(!TX.length&&ui.tab!=='instellingen'){v.innerHTML=emptyView();return;}
+  v.innerHTML={overzicht:viewOverzicht,transacties:viewTx,vast:viewVast,doelen:viewDoelen,belasting:viewTax,instellingen:viewSettings}[ui.tab]();
+}
+function renderSync(){
+  $('#syncline').innerHTML=dbxConnected()?`<span class="status ${D.syncErr?'err':'ok'}"><i></i>${D.syncErr?'Dropbox: niet gesynchroniseerd':'Dropbox'+(D.lastSync?' · '+new Date(D.lastSync).toLocaleTimeString('nl-NL',{hour:'2-digit',minute:'2-digit'}):'')}</span>`:'Alles blijft op je eigen apparaat.';
+}
+function emptyView(){return `<div class="card stack"><h2>Nog geen transacties</h2>
+ <p class="sub">Zo haal je je afschriften uit ING:</p>
+ <ol class="steps"><li>Log in op Mijn ING (website, niet de app).</li><li>Ga naar je betaalrekening en kies <b>Af- en bijschrijvingen downloaden</b>.</li><li>Kies een periode en het formaat <b>CSV (puntkomma)</b>.</li><li>Laad het bestand hier in. Meerdere bestanden tegelijk mag; dubbele regels worden overgeslagen.</li></ol>
+ <div class="row"><label class="btn btn-primary" for="file">ING-bestand inladen</label><button data-act="sample">Voorbeeldgegevens bekijken</button></div></div>`;}
+
+function accountFilter(id,val){
+  const accs=spendAccounts(); if(accs.length<2) return '';
+  return `<select id="${id}" aria-label="Rekening"><option value="">Alle rekeningen</option>${accs.map(([i,a])=>`<option value="${esc(i)}" ${i===val?'selected':''}>${esc(a.label)}</option>`).join('')}</select>`;
+}
+function alertsFor(mk){
+  const al=[]; const y=PIDX[mk]?PIDX[mk].year:+mk.slice(0,4); const c=taxCalc(y);
+  const short=c.total-c.reserved;
+  const roy=royaltiesFor(y).filter(t=>t.mk===mk).reduce((s,t)=>s+t.amount,0);
+  if(c.gross>0&&short>5) al.push({color:'var(--warn)',tab:'belasting',text:`${roy?`Er kwam ${eur.format(roy)} aan royalty's binnen ${isCal()?'in '+MONTHS[+mk.slice(5,7)-1]:'deze maand'}. `:''}Zet nog <b class="num">${eur.format(short)}</b> opzij voor de belasting over ${y}.`});
+  const lastDate=TX.length?TX[0].date:todayISO();
+  for(const r of recurring()) if(r.rise&&daysBetween(r.last,lastDate)<=45) al.push({color:'var(--out)',tab:'vast',text:`${esc(r.name)} is duurder geworden: ${eur.format(r.rise.from)} → <b class="num">${eur.format(r.rise.to)}</b>.`});
+  const s=monthSum(mk);
+  for(const [cat,b] of Object.entries(S.budgets)){ const spent=s.bycat[cat]||0; if(b>0&&spent>b) al.push({color:'var(--out)',tab:'doelen',text:`${esc(cat)}: ${eur0.format(spent)} uitgegeven, budget was ${eur0.format(b)}.`}); }
+  return al;
+}
+function upcoming(){
+  const t=todayISO(), p=periodOf(t), end=p?p.end:t.slice(0,7)+'-31';
+  return recurring().filter(r=>r.next>=t&&r.next<=end).sort((a,b)=>a.next.localeCompare(b.next));
+}
+function viewOverzicht(){
+  const ms=months(); if(!ms.length) return `<div class="card empty">Geen transacties op deze rekening.</div>`;
+  if(!ui.month||!ms.includes(ui.month)) ui.month=ms[ms.length-1];
+  const i=ms.indexOf(ui.month); const s=monthSum(ui.month);
+  const budgetCats=Object.keys(S.budgets).filter(c=>S.budgets[c]>0);
+  const catNames=[...new Set([...Object.keys(s.bycat),...budgetCats])];
+  const cats=catNames.map(c=>[c,s.bycat[c]||0]).sort((a,b)=>b[1]-a[1]);
+  const max=Math.max(1,...cats.map(([c,a])=>Math.max(a,S.budgets[c]||0)));
+  const done=ms.filter(k=>!PIDX[k]||PIDX[k].end<todayISO()); const base=done.length?done:ms; // lopende maand telt niet mee in gemiddelden
+  const sums=base.map(monthSum); const n=sums.length;
+  const avgIn=sums.reduce((a,x)=>a+x.inc,0)/n, avgOut=sums.reduce((a,x)=>a+x.out,0)/n, avgSaved=sums.reduce((a,x)=>a+x.saved,0)/n;
+  const rec=recurring(); const vast=rec.reduce((a,r)=>a+r.monthly,0);
+  const y=PIDX[ui.month]?PIDX[ui.month].year:+ui.month.slice(0,4); const tc=taxCalc(y); const taxMonthly=tc.total/12;
+  const room=avgIn-avgOut-taxMonthly; const goalsPer=S.goals.reduce((a,g)=>a+goalMonthly(g).per,0);
+  const al=alertsFor(ui.month); const up=upcoming(); const upTot=up.reduce((a,r)=>a+r.amount,0);
+  return `<div class="stack">
+   <div class="spread"><div class="monthbar">
+     <button class="btn-small" data-act="mprev" ${i<=0?'disabled':''} aria-label="Vorige maand">‹</button>
+     <span class="label">${mLabel(ui.month)}${isCal()?'':`<span class="note" style="display:block;font-family:var(--f-body);font-weight:400">${pRange(ui.month)}</span>`}</span>
+     <button class="btn-small" data-act="mnext" ${i>=ms.length-1?'disabled':''} aria-label="Volgende maand">›</button></div>
+     <div class="row">${accountFilter('accsel',ui.acc)}<button class="btn-link note" data-act="periodset">${esc(periodSummary())}</button></div></div>
+   <div class="stats">
+     <div class="stat"><h3>Binnen</h3><div class="v in">${eur.format(s.inc)}</div></div>
+     <div class="stat"><h3>Uitgegeven</h3><div class="v out">${eur.format(s.out)}</div></div>
+     <div class="stat"><h3>Opzij gezet</h3><div class="v">${eur.format(s.saved)}</div></div>
+     <div class="stat"><h3>Over</h3><div class="v ${s.inc-s.out-s.saved<0?'out':''}">${eur.format(s.inc-s.out-s.saved)}</div></div>
+   </div>
+   ${al.length?`<div class="card alerts" aria-label="Let op">${al.map(a=>`<button class="alert" data-act="tab" data-tab="${a.tab}"><span class="mark" style="background:${a.color}"></span><span>${a.text}</span><span class="go" aria-hidden="true">›</span></button>`).join('')}</div>`:''}
+   <div class="card stack"><div class="spread"><h2>Waar ging het heen</h2><span class="note">Tik voor de transacties</span></div>
+     ${cats.length?`<div class="catbars">${cats.map(([c,a])=>{const b=S.budgets[c]||0;const over=b&&a>b, near=b&&a>=b*.9&&!over;
+       const col=over?'var(--out)':near?'var(--warn)':catColor(c);
+       return `<button class="catbar" data-act="gocat" data-cat="${esc(c)}">
+        <span class="name"><span class="dot" style="background:${catColor(c)}"></span><span>${esc(c)}</span></span>
+        <span class="track"><span class="fill" style="width:${(a/max*100).toFixed(1)}%;background:${col}"></span>${b?`<span class="bud" style="left:calc(${(b/max*100).toFixed(1)}% - 1px)"></span>`:''}</span>
+        <span class="num ${over?'out':''}">${eur0.format(a)}</span>
+        ${b?`<span class="bnote">${over?`${eur0.format(a-b)} over je budget van ${eur0.format(b)}`:`nog ${eur0.format(b-a)} van ${eur0.format(b)} budget`}</span>`:''}</button>`;}).join('')}</div>`:'<p class="empty">Geen uitgaven deze maand.</p>'}
+   </div>
+   ${up.length?`<div class="card"><div class="spread"><h2>Komt nog ${isCal()?'deze maand':'vóór '+fmtD(addDays((periodOf(todayISO())||{end:todayISO()}).end,1))}</h2><span class="num">${eur.format(upTot)}</span></div>
+     ${up.map(r=>`<div class="rec"><div style="min-width:0"><b>${esc(r.name)}</b><div class="meta">rond ${fmtD(r.next)}</div></div><div class="amt num">${eur.format(r.amount)}</div></div>`).join('')}
+     <p class="note" style="margin-top:8px">Geschat uit eerdere afschrijvingen.</p></div>`:''}
+   <div class="card stack"><h2>Maanden naast elkaar</h2>${barChart(ms.slice(-12))}</div>
+   <div class="card stack"><h2>Ruimte om te sparen</h2>
+     <p class="sub">Gemiddeld per maand, over ${n} afgesloten ${n===1?'maand':'maanden'}.</p>
+     <div class="result">
+       <div class="line"><span>Inkomsten</span><span class="num in">${eur.format(avgIn)}</span></div>
+       <div class="line"><span>Vaste lasten <span class="note">(incl. kwartaal/jaar, omgerekend)</span></span><span class="num">− ${eur.format(vast)}</span></div>
+       <div class="line"><span>Overige uitgaven</span><span class="num">− ${eur.format(Math.max(0,avgOut-vast))}</span></div>
+       <div class="line"><span>Belasting op royalty's <span class="note">(${y})</span></span><span class="num">− ${eur.format(taxMonthly)}</span></div>
+       <div class="line total"><span>Ruimte</span><span class="num ${room<0?'out':''}">${eur.format(room)}</span></div>
+       ${goalsPer?`<div class="line"><span>Nodig voor je spaardoelen</span><span class="num">− ${eur.format(goalsPer)}</span></div>
+       <div class="line"><span><b>Vrij daarna</b></span><span class="num ${room-goalsPer<0?'out':''}"><b>${eur.format(room-goalsPer)}</b></span></div>`:''}
+       <p class="note">Je zet nu gemiddeld ${eur.format(avgSaved)} per maand opzij (sparen en belastingpot samen).</p>
+     </div></div>
+  </div>`;
+}
+function barChart(ms){
+  const data=ms.map(m=>({m,...monthSum(m)})); const max=Math.max(1,...data.map(d=>Math.max(d.inc,d.out)));
+  const W=Math.max(320,ms.length*56),H=190,pad=30,bw=16,step=(W-pad)/ms.length; const sc=v=>(v/max)*(H-pad-14);
+  const lab=max>=1000?Math.round(max/100)/10+'k':Math.round(max);
+  return `<div class="legend"><span><i style="background:var(--in)"></i>Binnen</span><span><i style="background:var(--out)"></i>Uitgegeven</span></div>
+  <div class="chart-wrap"><svg viewBox="0 0 ${W} ${H}" width="100%" style="min-width:${Math.min(W,560)}px;max-width:${W}px" role="img" aria-label="Inkomsten en uitgaven per maand">
+   ${[0,.5,1].map(f=>`<line x1="${pad}" x2="${W}" y1="${H-pad-sc(max*f)}" y2="${H-pad-sc(max*f)}" stroke="var(--line)" stroke-width="1"/>`).join('')}
+   ${data.map((d,i)=>{const x=pad+i*step+step/2;return `
+     <rect x="${x-bw-1}" y="${H-pad-sc(d.inc)}" width="${bw}" height="${sc(d.inc)}" rx="3" fill="var(--in)"><title>${mLabel(d.m)}: binnen ${eur.format(d.inc)}</title></rect>
+     <rect x="${x+1}" y="${H-pad-sc(d.out)}" width="${bw}" height="${sc(d.out)}" rx="3" fill="var(--out)" opacity="${d.m===ui.month?1:.7}"><title>${mLabel(d.m)}: uitgegeven ${eur.format(d.out)}</title></rect>
+     <text x="${x}" y="${H-9}" text-anchor="middle" font-size="12" fill="${d.m===ui.month?'var(--ink)':'var(--muted)'}" font-weight="${d.m===ui.month?600:400}" font-family="Figtree, system-ui, sans-serif">${mShort(d.m)}</text>`;}).join('')}
+   <text x="${pad-4}" y="${H-pad-sc(max)+4}" text-anchor="end" font-size="10" fill="var(--muted)" font-family="IBM Plex Mono, monospace">${lab}</text>
+   <text x="${pad-4}" y="${H-pad+4}" text-anchor="end" font-size="10" fill="var(--muted)" font-family="IBM Plex Mono, monospace">0</text>
+  </svg></div>`;
+}
+
+function catOptions(sel){return allCats().map(([c])=>`<option ${c===sel?'selected':''}>${esc(c)}</option>`).join('');}
+function viewTx(){
+  const ms=[...new Set(TX.map(t=>t.mk))].sort();
+  let list=TX;
+  if(ui.facc) list=list.filter(t=>normIban(t.account)===ui.facc);
+  if(ui.fmonth) list=list.filter(t=>t.mk===ui.fmonth);
+  if(ui.fcat) list=list.filter(t=>t.cat===ui.fcat);
+  if(ui.q){const q=ui.q.toLowerCase();list=list.filter(t=>(t.name+' '+t.desc).toLowerCase().includes(q));}
+  const total=list.reduce((a,t)=>a+t.amount,0);
+  const uncats=TX.filter(t=>t.cat==='Overig').length;
+  const accSel=Object.keys(S.accounts).length>1?`<select id="facc" aria-label="Rekening"><option value="">Alle rekeningen</option>${Object.entries(S.accounts).map(([i,a])=>`<option value="${esc(i)}" ${i===ui.facc?'selected':''}>${esc(a.label)}</option>`).join('')}</select>`:'';
+  return `<div class="stack">
+   <div class="filters ${accSel?'four':''}">
+     <input id="q" type="search" placeholder="Zoek op naam of omschrijving" value="${esc(ui.q)}" aria-label="Zoeken">
+     <select id="fmonth" aria-label="Maand"><option value="">Alle maanden</option>${ms.slice().reverse().map(m=>`<option value="${m}" ${m===ui.fmonth?'selected':''}>${mLabel(m)}</option>`).join('')}</select>
+     <select id="fcat" aria-label="Categorie"><option value="">Alle categorieën</option>${allCats().map(([c])=>`<option ${c===ui.fcat?'selected':''}>${esc(c)}</option>`).join('')}</select>
+     ${accSel}
+   </div>
+   <div class="spread"><span class="note">${list.length} transacties · saldo <span class="num">${eur.format(total)}</span></span>
+     ${uncats&&ui.fcat!=='Overig'?`<button class="btn-small" data-act="showOverig">${uncats} nog in “Overig”</button>`:''}</div>
+   <div class="card" style="padding-block:4px"><div class="txlist">
+   ${list.slice(0,ui.limit).map(t=>`<div class="tx">
+     <span class="d">${t.date.slice(8)}-${t.date.slice(5,7)}<br>${t.date.slice(2,4)}</span>
+     <div style="min-width:0"><div class="n">${esc(t.name||t.desc||'(geen naam)')}</div>${t.desc?`<div class="m">${esc(t.desc)}</div>`:''}</div>
+     <span class="a ${t.amount>0?'in':''}">${t.amount>0?'+':''}${eur.format(t.amount)}</span>
+     <select data-tx="${t.id}" aria-label="Categorie" style="border-color:${catColor(t.cat)}">${catOptions(t.cat)}</select>
+   </div>`).join('')||'<p class="empty">Niets gevonden.</p>'}
+   </div></div>
+   ${list.length>ui.limit?`<button data-act="more">Toon meer (${list.length-ui.limit} over)</button>`:''}
+  </div>`;
+}
+
+function viewVast(){
+  const rec=recurring(); const groups={maand:[],kwartaal:[],halfjaar:[],jaar:[]}; rec.forEach(r=>groups[r.freq].push(r));
+  const monthlyTot=groups.maand.reduce((a,r)=>a+r.amount,0);
+  const reserve=[...groups.kwartaal,...groups.halfjaar,...groups.jaar].reduce((a,r)=>a+r.monthly,0);
+  const subs=rec.filter(r=>r.cat==='Abonnementen'||r.cat==='Schrijfkosten');
+  const rises=rec.filter(r=>r.rise);
+  const titles={maand:'Elke maand',kwartaal:'Per kwartaal',halfjaar:'Per half jaar',jaar:'Per jaar'};
+  const block=(k)=>groups[k].length?`<div class="card"><h2>${titles[k]}</h2>
+    ${groups[k].map(r=>`<div class="rec"><div style="min-width:0"><b>${esc(r.name)}</b><span class="pill">${esc(r.cat)}</span>${r.rise?`<span class="pill rise">duurder</span>`:''}
+      <div class="meta">${r.count}× gezien · laatst ${fmtD(r.last)} · volgende rond ${fmtD(r.next)}${r.rise?` · was ${eur.format(r.rise.from)}`:''}</div></div>
+      <div class="amt"><div class="num">${eur.format(r.amount)}</div>${k!=='maand'?`<div class="meta num">${eur.format(r.monthly)}/mnd</div>`:''}</div></div>`).join('')}</div>`:'';
+  return `<div class="stack">
+    <div class="stats">
+      <div class="stat"><h3>Vast per maand</h3><div class="v">${eur.format(monthlyTot)}</div></div>
+      <div class="stat"><h3>Reserveren kwartaal/jaar</h3><div class="v">${eur.format(reserve)}<span class="note"> /mnd</span></div></div>
+      <div class="stat"><h3>Abonnementen</h3><div class="v">${eur.format(subs.reduce((a,r)=>a+r.monthly,0))}<span class="note"> /mnd</span></div></div>
+      <div class="stat"><h3>Per jaar totaal</h3><div class="v">${eur0.format((monthlyTot+reserve)*12)}</div></div>
+    </div>
+    ${rises.length?`<div class="card"><h2>Duurder geworden</h2>${rises.map(r=>`<div class="rec"><div style="min-width:0"><b>${esc(r.name)}</b><div class="meta">sinds ${fmtD(r.last)}</div></div><div class="amt num"><span class="note">${eur.format(r.rise.from)} →</span> <span class="out">${eur.format(r.rise.to)}</span><div class="meta">+${eur.format((r.rise.to-r.rise.from)*({maand:12,kwartaal:4,halfjaar:2,jaar:1}[r.freq]))} per jaar</div></div></div>`).join('')}</div>`:''}
+    <p class="note">Herkend aan dezelfde ontvanger met een vergelijkbaar bedrag op een vast ritme. Een jaarbetaling verschijnt pas als er twee in je gegevens staan, dus laad bij voorkeur een heel jaar in.</p>
+    ${block('maand')}${block('kwartaal')}${block('halfjaar')}${block('jaar')}
+    ${rec.length?'':'<div class="card empty">Nog geen terugkerende betalingen gevonden. Daarvoor zijn minstens drie maanden aan gegevens nodig.</div>'}
+  </div>`;
+}
+
+function viewDoelen(){
+  const ms=months(); const cur=ui.month&&ms.includes(ui.month)?ui.month:ms[ms.length-1];
+  const s=cur?monthSum(cur):{bycat:{}};
+  const sums=ms.slice(-6).map(monthSum);
+  const avg=c=>sums.length?sums.reduce((a,x)=>a+(x.bycat[c]||0),0)/sums.length:0;
+  const expCats=allCats().map(x=>x[0]).filter(c=>!['Inkomsten','Royalties','Sparen','Belastingreservering','Eigen rekening'].includes(c));
+  const goals=S.goals; const goalsPer=goals.reduce((a,g)=>a+goalMonthly(g).per,0);
+  const nm=new Date(); const defBy=`${nm.getFullYear()+1}-${String(nm.getMonth()+1).padStart(2,'0')}`;
+  return `<div class="stack">
+   <div class="card stack"><div class="spread"><h2>Spaardoelen</h2>${goalsPer?`<span class="note">samen <span class="num">${eur.format(goalsPer)}</span> per maand</span>`:''}</div>
+     ${goals.length?`<div>${goals.map(g=>{const gm=goalMonthly(g);const pct=Math.min(100,(+g.saved||0)/(+g.target||1)*100);const [yy,mm]=g.by.split('-');
+       return `<div class="goal"><div class="spread"><b>${esc(g.name)}</b><button class="btn-small" data-act="delgoal" data-id="${g.id}" aria-label="Verwijder doel">×</button></div>
+        <div class="progress" role="progressbar" aria-valuenow="${Math.round(pct)}" aria-valuemin="0" aria-valuemax="100"><span style="width:${pct.toFixed(1)}%"></span></div>
+        <div class="spread note"><span><span class="num">${eur0.format(+g.saved||0)}</span> van <span class="num">${eur0.format(+g.target)}</span> · voor ${MONTHS[+mm-1]} ${yy}</span>
+          <span>${pct>=100?'<b class="in">Gehaald</b>':`<span class="num">${eur.format(gm.per)}</span> per maand, nog ${gm.left} ${gm.left===1?'maand':'maanden'}`}</span></div>
+        <div class="row"><label for="gs-${g.id}" class="note">Al gespaard</label><input id="gs-${g.id}" data-goal="${g.id}" type="number" inputmode="decimal" min="0" step="10" value="${esc(g.saved)}"></div></div>`;}).join('')}</div>`:'<p class="note">Nog geen doelen. Bijvoorbeeld een vakantie, een nieuwe laptop of een buffer.</p>'}
+     <div class="addgoal">
+       <input id="g-name" placeholder="Naam, bijv. Vakantie" aria-label="Naam doel">
+       <input id="g-target" type="number" inputmode="decimal" min="0" placeholder="Bedrag" aria-label="Doelbedrag">
+       <input id="g-by" type="month" value="${defBy}" aria-label="Wanneer">
+       <button class="btn-primary" data-act="addgoal">Toevoegen</button></div>
+   </div>
+   <div class="card stack"><h2>Budget per categorie</h2>
+     <p class="note">Per maand. Leeg = geen budget. Het overzicht kleurt oranje vanaf 90% en rood als je erover gaat. Ernaast staat wat je de afgelopen maanden gemiddeld uitgaf${cur?`, en wat het in ${mLabel(cur).split(' ')[0]} was`:''}.</p>
+     <div class="list budgets">${expCats.map(c=>{const sp=s.bycat[c]||0,b=S.budgets[c]||0;return `<div class="item">
+        <div class="mt"><span class="row" style="gap:7px"><span class="dot" style="background:${catColor(c)}"></span>${esc(c)}</span>
+        <span class="note">gem. <span class="num">${eur0.format(avg(c))}</span>${cur?` · nu <span class="num ${b&&sp>b?'out':''}">${eur0.format(sp)}</span>`:''}</span></div>
+        <input type="number" inputmode="decimal" min="0" step="10" data-budget="${esc(c)}" value="${b||''}" placeholder="—" aria-label="Budget ${esc(c)}"></div>`;}).join('')}</div>
+   </div>
+  </div>`;
+}
+
+function viewTax(){
+  const years=[...new Set(TX.map(t=>+t.date.slice(0,4)))].sort();
+  if(!ui.taxYear||!years.includes(ui.taxYear)) ui.taxYear=years.includes(TAX.year)?TAX.year:years[years.length-1];
+  const y=ui.taxYear; const c=taxCalc(y);
+  const f=v=>v===undefined||v===null?'':v;
+  const roy=royaltiesFor(y);
+  const byPlat={}; roy.forEach(t=>{const p=platformOf(t);byPlat[p]=(byPlat[p]||0)+t.amount;});
+  const plats=Object.entries(byPlat).sort((a,b)=>b[1]-a[1]); const pmax=Math.max(1,...plats.map(p=>p[1]));
+  const pcol=p=>PLAT_COLORS[plats.findIndex(x=>x[0]===p)%PLAT_COLORS.length];
+  const short=c.total-c.reserved; const pct=c.total?Math.min(100,c.reserved/c.total*100):100;
+  return `<div class="stack">
+   <div class="spread"><h2>Royalty's ${y}</h2>
+     ${years.length>1?`<select id="taxYear" aria-label="Jaar">${years.map(x=>`<option ${x===y?'selected':''}>${x}</option>`).join('')}</select>`:''}</div>
+   ${y!==TAX.year?`<div class="banner"><div>De belastingschatting gebruikt de tarieven van <b>${TAX.year}</b>. Voor ${y} wijken die iets af.</div></div>`:''}
+
+   <div class="card stack"><div class="spread"><h2>Belastingpot</h2><span class="note">${Math.round(c.rate*100)}% van elke royalty-betaling</span></div>
+     <div class="progress"><span style="width:${pct.toFixed(1)}%;background:${short>5?'var(--warn)':'var(--in)'}"></span></div>
+     <div class="potbox">
+       <div><h3>Nodig tot nu toe</h3><div class="num">${eur.format(c.total)}</div></div>
+       <div><h3>Opzij gezet</h3><div class="num">${eur.format(c.reserved)}</div></div>
+       <div><h3>${short>5?'Nog opzij zetten':'Voorsprong'}</h3><div class="num ${short>5?'warn':'in'}">${eur.format(Math.abs(short))}</div></div>
+     </div>
+     <p class="note">Opzij gezet = overboekingen in de categorie Belastingreservering (of naar een rekening die je bij Instellingen als belastingpot markeert)${c.prepaid?', plus wat je al via de voorlopige aanslag betaalde':''}, plus wat je hieronder zelf invult.</p>
+     <div class="row"><label for="t-resman" class="note">Ook al opzij gezet (buiten ING om)</label><input id="t-resman" type="number" inputmode="decimal" min="0" step="10" placeholder="0" value="${f(S.taxReserved[y])}" style="width:8em"></div>
+     ${roy.length?`<div><h3 style="margin:6px 0 2px">Laatste betalingen</h3>${roy.slice(0,5).map(t=>`<div class="rec"><div style="min-width:0"><b>${esc(platformOf(t))}</b><div class="meta">${fmtD(t.date)} · ${eur.format(t.amount)}</div></div><div class="amt"><div class="meta">zet opzij</div><div class="num">${eur.format(t.amount*c.rate)}</div></div></div>`).join('')}</div>`:''}
+   </div>
+
+   <div class="card stack"><div class="spread"><h2>Per platform</h2><span class="num">${eur.format(c.auto)}</span></div>
+     ${plats.length?`<div class="catbars">${plats.map(([p,a])=>`<div class="catbar" style="cursor:default"><span class="name"><span class="dot" style="background:${pcol(p)}"></span><span>${esc(p)}</span></span>
+       <span class="track"><span class="fill" style="width:${(a/pmax*100).toFixed(1)}%;background:${pcol(p)}"></span></span><span class="num">${eur0.format(a)}</span></div>`).join('')}</div>
+       ${platChart(y,roy,plats.map(p=>p[0]),pcol)}`:'<p class="note">Nog geen royalty\'s gevonden in dit jaar. Staat een betaling op een andere naam, zet hem dan bij Transacties op Royalties.</p>'}
+   </div>
+
+   <div class="card stack"><h2>Hoeveel belasting?</h2>
+     <div class="seg" role="group" aria-label="Soort inkomen">
+       <button data-act="mode" data-v="overig" aria-pressed="${c.mode==='overig'}">Overige werkzaamheden</button>
+       <button data-act="mode" data-v="onderneming" aria-pressed="${c.mode==='onderneming'}">Onderneming</button></div>
+     <p class="note">${c.mode==='overig'?'Meest voorkomend als je het schrijven naast ander werk doet of nog niet als ondernemer bent aangemerkt. Geen ondernemersaftrek.':'Als je bij de KvK staat en de Belastingdienst je als ondernemer ziet. Je krijgt de MKB-winstvrijstelling (12,7%), en de zelfstandigenaftrek als je minstens 1.225 uur per jaar aan je onderneming werkt.'}</p>
+     <div class="form">
+       <label>Royalty's via ING in ${y}</label><span class="num" style="text-align:right">${eur.format(c.auto)}</span>
+       <label for="t-extra">Royalty's die niet via ING binnenkwamen</label><input id="t-extra" type="number" inputmode="decimal" step="0.01" min="0" placeholder="0" value="${f(c.st.extra)}">
+       <label for="t-costs">Kosten voor je schrijven</label><input id="t-costs" type="number" inputmode="decimal" step="0.01" min="0" placeholder="${c.autoCost.toFixed(2)}" value="${f(c.st.costs)}">
+       <span class="hint">Leeg laten = alles in de categorie Schrijfkosten (${eur.format(c.autoCost)}). Denk aan editing, covers, advertenties, software.</span>
+       <label for="t-other">Je overige inkomen in box 1 dit jaar (bijv. loon, bruto)</label><input id="t-other" type="number" inputmode="decimal" step="100" min="0" placeholder="0" value="${f(c.st.other)}">
+       <span class="hint">Bepaalt in welke belastingschijf je royalty's vallen.</span>
+       ${c.mode==='onderneming'?`<label for="t-za">Ik haal het urencriterium (zelfstandigenaftrek)</label><input id="t-za" type="checkbox" ${c.za?'checked':''} style="justify-self:end;width:20px;height:20px">`:''}
+       <label for="t-pre">Al betaald via voorlopige aanslag</label><input id="t-pre" type="number" inputmode="decimal" step="1" min="0" placeholder="0" value="${f(c.st.prepaid)}">
+     </div>
+     <div class="result">
+       <div class="line"><span>Royalty's totaal</span><span class="num">${eur.format(c.gross)}</span></div>
+       <div class="line"><span>Min kosten</span><span class="num">− ${eur.format(Math.min(c.costs,c.gross))}</span></div>
+       ${c.mode==='onderneming'?`<div class="line"><span>Min zelfstandigenaftrek</span><span class="num">− ${eur.format(c.zaUsed)}</span></div>
+       <div class="line"><span>Min MKB-winstvrijstelling</span><span class="num">− ${eur.format(c.mkbUsed)}</span></div>`:''}
+       <div class="line"><span><b>Belastbaar</b></span><span class="num"><b>${eur.format(c.taxable)}</b></span></div>
+       <div class="line"><span>Inkomstenbelasting hierover</span><span class="num">${eur.format(c.ib)}</span></div>
+       <div class="line"><span>Bijdrage Zvw (4,85%)</span><span class="num">${eur.format(c.zvw)}</span></div>
+       ${c.prepaid?`<div class="line"><span>Al betaald</span><span class="num">− ${eur.format(c.prepaid)}</span></div>`:''}
+       <div class="line total"><span>${c.prepaid?'Nog te betalen':'Totaal belasting'}</span><span class="num">${eur.format(Math.max(0,c.due))}</span></div>
+       <div class="line note"><span>Dat is ${Math.round(c.rate*100)}% van je royalty's, of ${eur.format(c.total/12)} per maand.</span></div>
+     </div>
+   </div>
+
+   <div class="card stack"><div class="spread"><h2>Jaaroverzicht voor de aangifte</h2><button class="btn-small" data-act="copyyear">Kopiëren</button></div>
+     <textarea id="yeartext" readonly aria-label="Jaaroverzicht">${esc(yearText(y,c,plats))}</textarea>
+     <p class="note">Plak dit in een mail aan je boekhouder of bewaar het bij je aangifte.</p></div>
+
+   <div class="card stack"><h3>Wat de schatting niet meeneemt</h3>
+     <p class="note">Heffingskortingen (zoals de algemene heffingskorting) nemen af als je meer verdient. Daardoor kost extra inkomen in werkelijkheid vaak iets meer dan hier staat. Ook niet meegerekend: toeslagen, aftrekposten van je partner, buitenlandse bronbelasting (bijvoorbeeld van Amazon US) en btw. De Zvw-bijdrage gaat ervan uit dat je overige inkomen loon is waarover je werkgever die al betaalt.</p>
+     <p class="note">Tarieven ${TAX.year}: 35,75% tot € 38.883, 37,56% tot € 78.426, daarboven 49,50%. Dit is een indicatie om geld opzij te zetten, geen belastingadvies. Laat je situatie één keer nakijken door een boekhouder.</p></div>
+  </div>`;
+}
+function platChart(y,roy,names,pcol){
+  const mk=Array.from({length:12},(_,i)=>`${y}-${String(i+1).padStart(2,'0')}`);
+  const data=mk.map(m=>{const o={};roy.filter(t=>t.date.slice(0,7)===m).forEach(t=>{const p=platformOf(t);o[p]=(o[p]||0)+t.amount;});return o;});
+  const tot=data.map(o=>Object.values(o).reduce((a,b)=>a+b,0)); const max=Math.max(1,...tot);
+  const W=560,H=150,pad=6,step=(W-pad*2)/12,bw=step*.6; const sc=v=>v/max*(H-30);
+  return `<div class="chart-wrap"><svg viewBox="0 0 ${W} ${H}" width="100%" style="min-width:360px" role="img" aria-label="Royalty's per maand, per platform">
+    <line x1="0" x2="${W}" y1="${H-20}" y2="${H-20}" stroke="var(--line)"/>
+    ${data.map((o,i)=>{let yy=H-20;const x=pad+i*step+(step-bw)/2;return names.filter(n=>o[n]).map(n=>{const h=sc(o[n]);yy-=h;return `<rect x="${x}" y="${yy}" width="${bw}" height="${Math.max(0,h-1)}" rx="2" fill="${pcol(n)}"><title>${esc(n)}, ${MONTHS[i]}: ${eur.format(o[n])}</title></rect>`;}).join('')+
+      `<text x="${x+bw/2}" y="${H-5}" text-anchor="middle" font-size="11" fill="var(--muted)" font-family="Figtree, system-ui, sans-serif">${MSHORT[i]}</text>`;}).join('')}
+  </svg></div><p class="note">Hoogste maand: ${eur.format(max)}.</p>`;
+}
+function yearText(y,c,plats){
+  const L=[];const p=(a,b)=>L.push(a.padEnd(34,' ')+b);
+  L.push(`Kasboek — schrijfinkomsten ${y}`,'');
+  L.push('Royalty\'s per platform');
+  plats.forEach(([n,a])=>p('  '+n,eur.format(a)));
+  if(c.extra) p('  Overig (niet via ING)',eur.format(c.extra));
+  p('  Totaal',eur.format(c.gross)); L.push('');
+  L.push('Kosten');
+  if(c.st.costs!==undefined&&c.st.costs!=='') p('  Zelf ingevuld',eur.format(c.costs));
+  else c.costTx.forEach(t=>p(`  ${t.date} ${t.name}`.slice(0,33),eur.format(-t.amount)));
+  p('  Totaal',eur.format(c.costs)); L.push('');
+  p('Resultaat',eur.format(c.profit));
+  p('Soort',c.mode==='onderneming'?'winst uit onderneming':'resultaat overige werkzaamheden');
+  p('Geschatte IB + Zvw',eur.format(c.total));
+  if(c.prepaid) p('Voorlopige aanslag betaald',eur.format(c.prepaid));
+  L.push('','Schatting met tarieven '+TAX.year+'; geen belastingadvies.');
+  return L.join('\n');
+}
+
+function viewSettings(){
+  const ur=S.userRules; const dirL={in:'bij',out:'af',any:'beide'};
+  const accs=Object.entries(S.accounts);
+  const redirect=location.origin+location.pathname;
+  return `<div class="stack">
+   <div class="card stack" id="periodcard"><h2>Begin van de maand</h2>
+     <p class="note">Alle overzichten, budgetten en "komt nog" rekenen vanaf deze dag. De belasting blijft per kalenderjaar.</p>
+     <div class="seg" role="group" aria-label="Begin van de maand">
+       <button data-act="pmode" data-v="cal" aria-pressed="${S.period.mode==='cal'}">De 1e</button>
+       <button data-act="pmode" data-v="day" aria-pressed="${S.period.mode==='day'}">Vaste dag</button>
+       <button data-act="pmode" data-v="salary" aria-pressed="${S.period.mode==='salary'}">Als salaris binnenkomt</button></div>
+     ${S.period.mode==='day'?`<div class="row"><label for="pday">Mijn maand begint op dag</label><select id="pday">${Array.from({length:28},(_,i)=>`<option ${i+1===+S.period.day?'selected':''}>${i+1}</option>`).join('')}</select></div>`:''}
+     ${S.period.mode==='salary'?(()=>{const c=payerCandidates();return c.length?`<div class="stack-s"><label for="ppayer">Welke betaling is je salaris?</label>
+       <select id="ppayer"><option value="">Kies…</option>${c.map(x=>`<option value="${esc(x.key)}" ${x.key===S.period.payer?'selected':''}>${esc(x.name)} · ±${eur0.format(x.amount)} · rond de ${x.day}e</option>`).join('')}</select>
+       <p class="note">Elke keer dat deze betaling binnenkomt, begint een nieuwe maand. Komt je salaris eerder door een weekend of feestdag, dan schuift de maand mee.</p></div>`
+       :'<p class="note">Ik zie nog geen betaling die minstens twee keer binnenkwam. Laad eerst een paar maanden in.</p>';})():''}
+     ${!isCal()&&PERIODS.length?(()=>{const p=periodOf(todayISO());return p?`<p class="note">Huidige maand: <b>${esc(p.name)}</b>, ${fmtD(p.start)} t/m ${fmtD(p.end)}.</p>`:'';})():''}
+   </div>
+   <div class="card stack"><h2>Rekeningen</h2>
+     ${accs.length?`<p class="note">Geef elke rekening een naam en soort. Overboekingen naar een spaarrekening tellen als sparen, naar je belastingpot als belastingreservering, en tussen je betaalrekeningen tellen ze niet mee.</p>
+     <div>${accs.map(([i,a])=>`<div class="acc"><span class="iban">${esc(i)}</span>
+        <input data-acclabel="${esc(i)}" value="${esc(a.label)}" aria-label="Naam rekening">
+        <select data-acctype="${esc(i)}" aria-label="Soort rekening">${Object.entries(ACC_TYPES).map(([k,l])=>`<option value="${k}" ${a.type===k?'selected':''}>${l}</option>`).join('')}</select></div>`).join('')}</div>
+     <p class="note">Laad ook de CSV van je spaarrekening of gezamenlijke rekening in, dan herkent Kasboek de overboekingen vanzelf.</p>`
+     :'<p class="note">Zodra je een ING-bestand inlaadt, verschijnen je rekeningen hier.</p>'}
+   </div>
+
+   <div class="card stack"><h2>Dropbox</h2>
+     ${dropboxPanel(redirect)}
+   </div>
+
+   <div class="card stack"><h2>Back-up</h2>
+     <p class="note">Een back-up bevat al je transacties, regels, budgetten en doelen${D.pw?', versleuteld met je wachtwoord':''}. Handig om over te zetten naar een ander apparaat.</p>
+     <div class="row"><button data-act="backup">Back-up downloaden</button><button data-act="backupcopy">Kopiëren als tekst</button>
+       <label class="btn" for="restorefile">Back-up terugzetten…</label><button data-act="restorepaste">Tekst plakken</button></div>
+     ${ui.backupText?`<textarea id="backuptext" readonly aria-label="Back-up">${esc(ui.backupText)}</textarea><p class="note">Selecteer alles en kopieer, als de knop niet werkte.</p>`:''}
+     ${ui.restore?`<textarea id="restoretext" placeholder="Plak hier de back-uptekst" aria-label="Back-up plakken"></textarea>
+       <div class="row"><button class="btn-danger" data-act="restoredo">Vervang alles door deze back-up</button><button data-act="restorecancel">Annuleren</button></div>`:''}
+   </div>
+
+   <div class="card stack"><h2>Versleuteling</h2>
+     <p class="note">Met een wachtwoord worden back-ups en je Dropbox-bestand versleuteld. Zonder wachtwoord kan niemand ze lezen, ook Dropbox niet. Het wachtwoord blijft op dit apparaat; vul op je andere apparaten hetzelfde in. Kwijt = kwijt.</p>
+     <div class="row"><input id="pw" type="password" autocomplete="new-password" placeholder="${D.pw?'•••••••• (ingesteld)':'Wachtwoord'}" aria-label="Wachtwoord">
+       <button data-act="setpw">${D.pw?'Wijzigen':'Instellen'}</button>${D.pw?'<button data-act="clearpw">Verwijderen</button>':''}</div>
+   </div>
+
+   <div class="card stack"><h2>Nieuwe regel</h2>
+     <p class="note">Als de naam, omschrijving of tegenrekening deze tekst bevat, komt de transactie in de gekozen categorie. Jouw regels gaan voor de standaardregels.</p>
+     <div class="addrule">
+       <input id="r-match" placeholder="bijv. kinderboerderij" aria-label="Tekst">
+       <select id="r-dir" aria-label="Richting"><option value="any">Af en bij</option><option value="out">Alleen af</option><option value="in">Alleen bij</option></select>
+       <select id="r-cat" aria-label="Categorie">${catOptions('Overig')}</select>
+       <button class="btn-primary" data-act="addrule">Toevoegen</button></div>
+     <div class="list">${ur.length?ur.map((r,i)=>`<div class="item"><span class="mt num" style="font-size:.85rem">“${esc(r.match)}” <span class="note">(${dirL[r.dir]})</span></span><span class="chip"><span class="dot" style="background:${catColor(r.cat)}"></span>${esc(r.cat)}</span><button class="btn-small" data-act="delrule" data-i="${i}" aria-label="Verwijder regel">×</button></div>`).join(''):'<p class="note">Nog geen eigen regels. Je maakt er ook een door bij een transactie een andere categorie te kiezen.</p>'}</div>
+   </div>
+   <div class="card stack"><h2>Eigen categorie</h2>
+     <div class="row"><input id="c-new" placeholder="bijv. Paarden" aria-label="Nieuwe categorie"><button data-act="addcat">Toevoegen</button></div>
+     ${S.extraCats.length?`<div class="row">${S.extraCats.map((c,i)=>`<span class="chip">${esc(c)} <button class="btn-small" style="padding:0 6px;border:none;background:none" data-act="delcat" data-i="${i}" aria-label="Verwijder">×</button></span>`).join('')}</div>`:''}
+   </div>
+   <details class="card list"><summary><b>Standaardregels</b> <span class="note">(${DEFAULT_RULES.length}) · vinkje uit om er een uit te zetten</span></summary>
+     ${DEFAULT_RULES.map(r=>{const k=r.match+'|'+r.dir;return `<div class="item"><span class="mt num" style="font-size:.85rem">“${esc(r.match)}” <span class="note">(${dirL[r.dir]})</span></span><span class="chip"><span class="dot" style="background:${catColor(r.cat)}"></span>${esc(r.cat)}</span><input type="checkbox" data-builtin="${esc(k)}" ${S.disabledBuiltins.includes(k)?'':'checked'} aria-label="Regel aan"></div>`;}).join('')}
+   </details>
+
+   <div class="card stack"><h2>Als app op je telefoon</h2>
+     ${installPrompt?'<div><button class="btn-primary" data-act="install">Installeren</button></div>':''}
+     <p class="note">Android (Chrome): menu ⋮ → <b>Toevoegen aan startscherm</b>. iPhone (Safari): deelknop → <b>Zet op beginscherm</b>. Werkt vanaf de versie op GitHub Pages.</p></div>
+
+   <div class="card stack"><h2>Gegevens</h2>
+     <p class="note">Je transacties staan in de opslag van deze browser${dbxConnected()?' en in je eigen Dropbox':''}. Ze gaan nergens anders naartoe.</p>
+     <div class="row">${S.sample?'':'<button data-act="sample">Voorbeeldgegevens bekijken</button>'}
+     ${ui.wipe?`<span>Zeker weten?</span><button class="btn-danger" data-act="wipe2">Ja, alles wissen</button><button data-act="wipe0">Annuleren</button>`:`<button class="btn-danger" data-act="wipe1">Alle transacties wissen</button>`}</div>
+     <p class="note">Versie ${VERSION}</p>
+   </div>
+  </div>`;
+}
+function dropboxPanel(redirect){
+  if(IN_FRAME) return `<p class="note">Dropbox werkt in de versie op GitHub Pages, niet in deze voorbeeldweergave. Daar staat je Kasboek dan automatisch in je eigen Dropbox, zodat je laptop en telefoon hetzelfde zien.</p>`;
+  if(dbxConnected()) return `<div class="row"><span class="status ${D.syncErr?'err':'ok'}"><i></i>${D.syncErr?esc(D.syncErr):'Gekoppeld'+(D.lastSync?' · laatst gesynchroniseerd '+new Date(D.lastSync).toLocaleString('nl-NL',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'')}</span></div>
+     <p class="note">Wijzigingen gaan vanzelf naar <span class="num">Apps/&lt;naam van je app&gt;/kasboek.json</span> in je Dropbox. Bij het openen haalt Kasboek de nieuwste versie op en voegt die samen.${D.pw?' Het bestand is versleuteld.':' Tip: stel hieronder een wachtwoord in, dan is het bestand versleuteld.'}</p>
+     <div class="row"><button class="btn-primary" data-act="dbxsync">Nu synchroniseren</button><button data-act="dbxoff">Ontkoppelen</button></div>`;
+  return `<p class="note">Koppel je eigen Dropbox, dan synchroniseert Kasboek tussen je apparaten. Eenmalig instellen:</p>
+   <ol class="steps"><li>Ga op je computer naar <a href="https://www.dropbox.com/developers/apps" target="_blank" rel="noopener">dropbox.com/developers/apps</a> en kies <b>Create app</b>.</li>
+   <li>Kies <b>Scoped access</b> en <b>App folder</b>, en geef hem een naam, bijv. <b>Kasboek-Serena</b>.</li>
+   <li>Tab <b>Permissions</b>: vink <b>files.content.write</b> en <b>files.content.read</b> aan en klik <b>Submit</b>.</li>
+   <li>Tab <b>Settings</b>, bij <b>OAuth 2 → Redirect URIs</b>: voeg dit adres toe:<div class="codebox" style="margin-top:4px">${esc(redirect)}</div></li>
+   <li>Kopieer de <b>App key</b> van die pagina en plak hem hieronder.</li></ol>
+   <div class="row"><input id="dbxkey" placeholder="App key" value="${esc(D.dbxKey)}" aria-label="Dropbox App key" autocomplete="off"><button class="btn-primary" data-act="dbxconnect">Koppelen</button></div>`;
+}
+
+/* ---------- Versleuteling & back-up ---------- */
+const te=new TextEncoder(), td=new TextDecoder();
+function b64(u8){let s='';for(let i=0;i<u8.length;i+=0x8000)s+=String.fromCharCode.apply(null,u8.subarray(i,i+0x8000));return btoa(s);}
+function unb64(s){const b=atob(s);const u=new Uint8Array(b.length);for(let i=0;i<b.length;i++)u[i]=b.charCodeAt(i);return u;}
+async function deriveKey(pw,salt){const base=await crypto.subtle.importKey('raw',te.encode(pw),'PBKDF2',false,['deriveKey']);
+  return crypto.subtle.deriveKey({name:'PBKDF2',salt,iterations:250000,hash:'SHA-256'},base,{name:'AES-GCM',length:256},false,['encrypt','decrypt']);}
+async function pack(obj){
+  if(!D.pw) return JSON.stringify({kasboek:2,data:obj});
+  const salt=crypto.getRandomValues(new Uint8Array(16)), iv=crypto.getRandomValues(new Uint8Array(12));
+  const key=await deriveKey(D.pw,salt); const ct=new Uint8Array(await crypto.subtle.encrypt({name:'AES-GCM',iv},key,te.encode(JSON.stringify(obj))));
+  return JSON.stringify({kasboek:2,enc:{s:b64(salt),i:b64(iv),d:b64(ct)}});
+}
+async function unpack(text){
+  const p=JSON.parse(text);
+  if(p.enc){ if(!D.pw) throw new Error('Dit bestand is versleuteld. Stel eerst je wachtwoord in bij Versleuteling.');
+    try{const key=await deriveKey(D.pw,unb64(p.enc.s));return JSON.parse(td.decode(await crypto.subtle.decrypt({name:'AES-GCM',iv:unb64(p.enc.i)},key,unb64(p.enc.d))));}
+    catch(e){throw new Error('Het wachtwoord klopt niet bij dit bestand.');} }
+  if(p.data) return p.data;
+  if(p.tx) return p;
+  throw new Error('Dit is geen Kasboek-back-up.');
+}
+function cleanState(o){const s={...clone(DEFAULT_STATE),...o};s.period={...DEFAULT_STATE.period,...(o.period||{})};return s;}
+
+/* ---------- Dropbox ---------- */
+const dbxConnected=()=>!!(D.dbxKey&&D.dbxRefresh);
+function b64url(u8){return b64(u8).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');}
+async function dbxConnect(){
+  const key=($('#dbxkey')?.value||'').trim(); if(!key){toast('Plak eerst de App key.');return;}
+  D.dbxKey=key; saveDevice();
+  const verifier=b64url(crypto.getRandomValues(new Uint8Array(48)));
+  const challenge=b64url(new Uint8Array(await crypto.subtle.digest('SHA-256',te.encode(verifier))));
+  const state=b64url(crypto.getRandomValues(new Uint8Array(12)));
+  try{sessionStorage.setItem('kasboek.pkce',JSON.stringify({verifier,state}));}catch(e){}
+  try{localStorage.setItem('kasboek.pkce',JSON.stringify({verifier,state}));}catch(e){}
+  const u=new URL('https://www.dropbox.com/oauth2/authorize');
+  Object.entries({client_id:key,response_type:'code',code_challenge:challenge,code_challenge_method:'S256',redirect_uri:location.origin+location.pathname,token_access_type:'offline',state}).forEach(([k,v])=>u.searchParams.set(k,v));
+  location.href=u.toString();
+}
+async function dbxHandleRedirect(){
+  const p=new URLSearchParams(location.search); if(!p.has('code')&&!p.has('error')) return false;
+  history.replaceState(null,'',location.pathname);
+  if(p.has('error')){toast('Dropbox gaf geen toestemming.');return false;}
+  let pk=null; try{pk=JSON.parse(sessionStorage.getItem('kasboek.pkce')||localStorage.getItem('kasboek.pkce'));}catch(e){}
+  try{localStorage.removeItem('kasboek.pkce');}catch(e){}
+  if(!pk||pk.state!==p.get('state')){toast('Koppelen mislukt. Probeer het nog eens.');return false;}
+  try{
+    const r=await fetch('https://api.dropboxapi.com/oauth2/token',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},
+      body:new URLSearchParams({grant_type:'authorization_code',code:p.get('code'),client_id:D.dbxKey,code_verifier:pk.verifier,redirect_uri:location.origin+location.pathname})});
+    const j=await r.json(); if(!r.ok) throw new Error(j.error_description||'token');
+    D.dbxAccess=j.access_token; D.dbxRefresh=j.refresh_token; D.dbxExp=Date.now()+(j.expires_in-60)*1000; D.syncErr=''; saveDevice();
+    toast('Dropbox gekoppeld.'); return true;
+  }catch(e){toast('Koppelen mislukt. Klopt de Redirect URI in je Dropbox-app?');return false;}
+}
+async function dbxToken(){
+  if(D.dbxAccess&&Date.now()<D.dbxExp) return D.dbxAccess;
+  const r=await fetch('https://api.dropboxapi.com/oauth2/token',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},
+    body:new URLSearchParams({grant_type:'refresh_token',refresh_token:D.dbxRefresh,client_id:D.dbxKey})});
+  const j=await r.json(); if(!r.ok){ if(j.error==='invalid_grant'){D.dbxRefresh='';saveDevice();} throw new Error('Dropbox-toegang verlopen, koppel opnieuw.'); }
+  D.dbxAccess=j.access_token; D.dbxExp=Date.now()+(j.expires_in-60)*1000; saveDevice(); return D.dbxAccess;
+}
+async function dbxDownload(){
+  const tok=await dbxToken();
+  const r=await fetch('https://content.dropboxapi.com/2/files/download',{method:'POST',headers:{Authorization:'Bearer '+tok,'Dropbox-API-Arg':JSON.stringify({path:'/kasboek.json'})}});
+  if(r.status===409) return null; if(!r.ok) throw new Error('Downloaden van Dropbox lukte niet ('+r.status+').');
+  return r.text();
+}
+async function dbxUpload(text){
+  const tok=await dbxToken();
+  const r=await fetch('https://content.dropboxapi.com/2/files/upload',{method:'POST',headers:{Authorization:'Bearer '+tok,'Content-Type':'application/octet-stream',
+    'Dropbox-API-Arg':JSON.stringify({path:'/kasboek.json',mode:'overwrite',mute:true})},body:text});
+  if(!r.ok) throw new Error('Opslaan in Dropbox lukte niet ('+r.status+').');
+}
+function mergeStates(a,b){
+  const [newer,older]=(a.savedAt||0)>=(b.savedAt||0)?[a,b]:[b,a];
+  const out=cleanState(clone(newer));
+  const ids=new Set(out.tx.map(t=>t.id));
+  if((older.savedAt||0)>(newer.wipedAt||0)) for(const t of older.tx||[]) if(!ids.has(t.id)){out.tx.push(t);ids.add(t.id);}
+  out.overrides={...(older.overrides||{}),...(newer.overrides||{})};
+  out.accounts={...(older.accounts||{}),...(newer.accounts||{})};
+  if(!a.sample||!b.sample){ out.sample=false; out.tx=out.tx.filter(t=>!t.sample); }
+  out.savedAt=Math.max(a.savedAt||0,b.savedAt||0);
+  return out;
+}
+let syncing=false, upTimer=null;
+async function dbxSync(quiet){
+  if(!dbxConnected()||syncing||IN_FRAME) return; syncing=true;
+  try{
+    const remoteText=await dbxDownload();
+    if(remoteText){ const remote=cleanState(await unpack(remoteText)); S=mergeStates(S,remote); saveLocal(); }
+    await dbxUpload(await pack(S));
+    D.lastSync=Date.now(); D.syncErr=''; saveDevice();
+    if(!quiet) toast('Gesynchroniseerd met Dropbox.');
+  }catch(e){ D.syncErr=e.message; saveDevice(); if(!quiet) toast(e.message); }
+  finally{ syncing=false; render(); }
+}
+function scheduleUpload(){
+  if(!dbxConnected()||IN_FRAME) return; clearTimeout(upTimer);
+  upTimer=setTimeout(async()=>{ if(syncing) return scheduleUpload(); try{await dbxUpload(await pack(S));D.lastSync=Date.now();D.syncErr='';}catch(e){D.syncErr=e.message;} saveDevice(); renderSync(); },3000);
+}
+
+/* ---------- PWA ---------- */
+let installPrompt=null;
+if(!IN_FRAME){
+  const l=document.createElement('link');l.rel='manifest';l.href='manifest.webmanifest';document.head.appendChild(l);
+  const a=document.createElement('link');a.rel='apple-touch-icon';a.href='apple-touch-icon.png';document.head.appendChild(a);
+  if('serviceWorker' in navigator&&location.protocol==='https:') navigator.serviceWorker.register('sw.js').catch(()=>{});
+  window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();installPrompt=e;if(ui.tab==='instellingen')render();});
+}
+
+/* ---------- Interactie ---------- */
+let toastTimer;
+function toast(msg,action){
+  const el=$('#toast'); el.innerHTML=`<span>${esc(msg)}</span>`+(action?`<button class="btn-small" id="toastAct">${esc(action.label)}</button>`:'');
+  el.hidden=false; clearTimeout(toastTimer); toastTimer=setTimeout(()=>el.hidden=true,action?7000:4500);
+  if(action) $('#toastAct').onclick=()=>{action.run();el.hidden=true;};
+}
+async function copyText(text,fallbackId){
+  try{await navigator.clipboard.writeText(text);toast('Gekopieerd.');}
+  catch(e){const el=document.getElementById(fallbackId); if(el){el.focus();el.select();} toast('Kopiëren lukte niet automatisch. De tekst staat geselecteerd.');}
+}
+function goTab(t){ui.tab=t;ui.wipe=false;ui.restore=false;render();window.scrollTo(0,0);}
+document.querySelector('nav.tabs').addEventListener('click',e=>{const b=e.target.closest('button[data-tab]');if(b)goTab(b.dataset.tab);});
+document.addEventListener('click',async e=>{
+  const b=e.target.closest('[data-act]'); if(!b) return; const a=b.dataset.act; const ms=months();
+  if(a==='tab') goTab(b.dataset.tab);
+  if(a==='periodset'){goTab('instellingen');setTimeout(()=>document.getElementById('periodcard')?.scrollIntoView({block:'start'}),0);}
+  if(a==='pmode'){S.period={...S.period,mode:b.dataset.v};if(b.dataset.v==='salary'&&!S.period.payer){const c=payerCandidates().find(x=>TX.some(t=>payerKey(t)===x.key&&t.cat==='Inkomsten'))||payerCandidates()[0];if(c)S.period.payer=c.key;}
+    if(b.dataset.v==='day'&&(!S.period.day||S.period.day===1)){const c=payerCandidates()[0];S.period.day=c?Math.min(28,c.day):25;}
+    ui.month=null;save();render();}
+  if(a==='mprev'){ui.month=ms[ms.indexOf(ui.month)-1];render();}
+  if(a==='mnext'){ui.month=ms[ms.indexOf(ui.month)+1];render();}
+  if(a==='gocat'){ui.tab='transacties';ui.fcat=b.dataset.cat;ui.fmonth=ui.month;ui.facc=ui.acc;ui.q='';ui.limit=150;render();window.scrollTo(0,0);}
+  if(a==='showOverig'){ui.fcat='Overig';ui.fmonth='';render();}
+  if(a==='more'){ui.limit+=150;render();}
+  if(a==='sample'){S=sampleState();saveLocal();ui.month=null;ui.taxYear=null;render();}
+  if(a==='mode'){const y=ui.taxYear;S.tax[y]={...(S.tax[y]||{}),mode:b.dataset.v};save();render();}
+  if(a==='copyyear') copyText($('#yeartext').value,'yeartext');
+  if(a==='addrule'){const m=$('#r-match').value.trim().toLowerCase();if(!m)return;S.userRules.unshift({match:m,dir:$('#r-dir').value,cat:$('#r-cat').value});save();render();toast('Regel toegevoegd.');}
+  if(a==='delrule'){S.userRules.splice(+b.dataset.i,1);save();render();}
+  if(a==='addcat'){const c=$('#c-new').value.trim();if(!c||allCats().some(x=>x[0].toLowerCase()===c.toLowerCase()))return;S.extraCats.push(c);save();render();}
+  if(a==='delcat'){S.extraCats.splice(+b.dataset.i,1);save();render();}
+  if(a==='addgoal'){const name=$('#g-name').value.trim(),target=+$('#g-target').value,by=$('#g-by').value;
+    if(!name||!target||!by){toast('Vul een naam, bedrag en maand in.');return;}
+    S.goals.push({id:'g'+Date.now().toString(36),name,target,saved:0,by});save();render();}
+  if(a==='delgoal'){S.goals=S.goals.filter(g=>g.id!==b.dataset.id);save();render();}
+  if(a==='wipe1'){ui.wipe=true;render();}
+  if(a==='wipe0'){ui.wipe=false;render();}
+  if(a==='wipe2'){S.tx=[];S.overrides={};S.sample=false;S.wipedAt=Date.now();ui.wipe=false;save();render();toast('Alle transacties zijn gewist.');}
+  if(a==='backup'){const txt=await pack(S);const blob=new Blob([txt],{type:'application/json'});const u=URL.createObjectURL(blob);
+    const l=document.createElement('a');l.href=u;l.download=`kasboek-backup-${todayISO()}.json`;document.body.appendChild(l);l.click();l.remove();setTimeout(()=>URL.revokeObjectURL(u),2000);
+    if(IN_FRAME){ui.backupText=txt;render();toast('Downloaden werkt hier niet; kopieer de tekst hieronder.');}}
+  if(a==='backupcopy'){const txt=await pack(S);ui.backupText=txt;render();copyText(txt,'backuptext');}
+  if(a==='restorepaste'){ui.restore=true;render();$('#restoretext')?.focus();}
+  if(a==='restorecancel'){ui.restore=false;render();}
+  if(a==='restoredo'){try{const st=cleanState(await unpack($('#restoretext').value.trim()));S=st;S.savedAt=Date.now();saveLocal();scheduleUpload();ui.restore=false;ui.month=null;render();toast('Back-up teruggezet.');}catch(err){toast(err.message||'Deze tekst kon ik niet lezen.');}}
+  if(a==='setpw'){const v=$('#pw').value;if(v.length<6){toast('Kies een wachtwoord van minstens 6 tekens.');return;}D.pw=v;saveDevice();scheduleUpload();render();toast('Wachtwoord ingesteld.');}
+  if(a==='clearpw'){D.pw='';saveDevice();scheduleUpload();render();toast('Wachtwoord verwijderd. Nieuwe back-ups zijn niet meer versleuteld.');}
+  if(a==='dbxconnect') dbxConnect();
+  if(a==='dbxsync') dbxSync(false);
+  if(a==='dbxoff'){D.dbxRefresh='';D.dbxAccess='';D.lastSync=0;D.syncErr='';saveDevice();render();toast('Ontkoppeld. Het bestand in je Dropbox blijft staan.');}
+  if(a==='install'&&installPrompt){installPrompt.prompt();installPrompt=null;render();}
+});
+$('#restorefile').addEventListener('change',async e=>{
+  const f=e.target.files[0]; e.target.value=''; if(!f) return;
+  try{const st=cleanState(await unpack(await readFile(f,false)));S=st;S.savedAt=Date.now();saveLocal();scheduleUpload();ui.month=null;render();toast('Back-up teruggezet.');}
+  catch(err){toast(err.message||'Dit bestand kon ik niet lezen.');}
+});
+document.addEventListener('change',e=>{
+  const t=e.target;
+  if(t.matches('select[data-tx]')){
+    const id=t.dataset.tx, cat=t.value; S.overrides[id]=cat; save();
+    const tx=S.tx.find(x=>x.id===id); const nm=normName(tx.name)||normName(tx.desc);
+    render();
+    if(nm) toast(`Ook voortaan “${tx.name||tx.desc}” als ${cat}?`,{label:'Ja, maak regel',run:()=>{
+      S.userRules.unshift({match:nm,dir:tx.amount>0?'in':'out',cat});
+      for(const k of Object.keys(S.overrides)){const o=S.tx.find(x=>x.id===k);if(o&&(normName(o.name)||normName(o.desc))===nm&&S.overrides[k]===cat)delete S.overrides[k];}
+      save();render();toast('Regel gemaakt.');}});
+  }
+  if(t.id==='pday'){S.period={...S.period,day:+t.value};ui.month=null;save();render();}
+  if(t.id==='ppayer'){S.period={...S.period,payer:t.value};ui.month=null;save();render();}
+  if(t.id==='accsel'){ui.acc=t.value;ui.month=null;render();}
+  if(t.id==='facc'){ui.facc=t.value;ui.limit=150;render();}
+  if(t.id==='fmonth'){ui.fmonth=t.value;ui.limit=150;render();}
+  if(t.id==='fcat'){ui.fcat=t.value;ui.limit=150;render();}
+  if(t.id==='taxYear'){ui.taxYear=+t.value;render();}
+  if(t.matches('input[data-builtin]')){const k=t.dataset.builtin;S.disabledBuiltins=t.checked?S.disabledBuiltins.filter(x=>x!==k):[...S.disabledBuiltins,k];save();rebuild();}
+  if(t.id==='t-za'){const y=ui.taxYear;S.tax[y]={...(S.tax[y]||{}),za:t.checked};save();render();}
+  if(t.matches('select[data-acctype]')){S.accounts[t.dataset.acctype].type=t.value;save();render();}
+  if(t.matches('input[data-acclabel]')){S.accounts[t.dataset.acclabel].label=t.value.trim()||S.accounts[t.dataset.acclabel].label;save();}
+  if(t.matches('input[data-budget]')){const v=+t.value;if(v>0)S.budgets[t.dataset.budget]=v;else delete S.budgets[t.dataset.budget];save();}
+  if(t.matches('input[data-goal]')){const g=S.goals.find(x=>x.id===t.dataset.goal);if(g){g.saved=+t.value||0;save();render();}}
+});
+const taxFields={'t-extra':'extra','t-costs':'costs','t-other':'other','t-pre':'prepaid'};
+let qTimer;
+function rerenderKeep(id){render();const el=document.getElementById(id);if(el){el.focus();try{el.setSelectionRange(el.value.length,el.value.length);}catch(e){}}}
+document.addEventListener('input',e=>{
+  const t=e.target;
+  if(t.id==='q'){clearTimeout(qTimer);qTimer=setTimeout(()=>{ui.q=t.value;ui.limit=150;rerenderKeep('q');},250);}
+  if(taxFields[t.id]){const y=ui.taxYear;S.tax[y]={...(S.tax[y]||{}),[taxFields[t.id]]:t.value};save();clearTimeout(qTimer);qTimer=setTimeout(()=>rerenderKeep(t.id),600);}
+  if(t.id==='t-resman'){S.taxReserved[ui.taxYear]=t.value;save();clearTimeout(qTimer);qTimer=setTimeout(()=>rerenderKeep('t-resman'),600);}
+});
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&dbxConnected()&&Date.now()-D.lastSync>60000) dbxSync(true);});
+
+/* ---------- Start ---------- */
+load();
+if(S.sample&&!S.tx.length) S=sampleState();
+render();
+(async()=>{ if(IN_FRAME) return; const fresh=await dbxHandleRedirect(); if(dbxConnected()) dbxSync(!fresh); })();
+</script>
+
+</body>
+</html>
