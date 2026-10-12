@@ -121,6 +121,27 @@ table.yt{border-collapse:separate;border-spacing:0;font-size:.84rem;width:100%}
 .yt td[data-act]:hover{outline:2px solid var(--accent);outline-offset:-2px}
 .yt .nm{display:flex;gap:7px;align-items:center;overflow:hidden}
 .yt .nm span:last-child{overflow:hidden;text-overflow:ellipsis}
+.wf{display:flex;flex-direction:column;gap:2px}
+.wf .r{display:grid;grid-template-columns:minmax(0,10.5em) minmax(0,1fr) 6.2em;gap:10px;align-items:center;background:none;border:none;border-radius:6px;padding:5px 4px;text-align:left;font:inherit;color:inherit;width:100%}
+.wf button.r{cursor:pointer}
+.wf button.r:hover{background:var(--accent-soft)}
+.wf .nm{display:flex;gap:7px;align-items:center;min-width:0}
+.wf .nm span:last-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.wf .tr{position:relative;height:14px}
+.wf .bar{position:absolute;top:0;bottom:0;border-radius:3px;min-width:2px}
+.wf .amt{text-align:right;font-family:var(--f-num);font-variant-numeric:tabular-nums;white-space:nowrap}
+.wf .r.tot{border-top:1px solid var(--line);border-radius:0;margin-top:4px;padding-top:9px;font-weight:600}
+.wf .r.tot:first-child{border-top:none;margin-top:0;padding-top:5px}
+@media (max-width:520px){.wf .r{grid-template-columns:minmax(0,9.5em) minmax(0,1fr) 4.8em;gap:6px}}
+.days{display:flex;gap:3px;align-items:stretch;height:130px}
+.day{flex:1 1 0;min-width:0;display:flex;flex-direction:column;gap:4px}
+.day .col{flex:1;display:flex;align-items:flex-end;border-bottom:1px solid var(--line)}
+.day .col span{display:block;width:100%;max-width:22px;margin:0 auto;background:var(--out);border-radius:3px 3px 0 0;min-height:0}
+.day small{font-size:.68rem;color:var(--muted);text-align:center;font-family:var(--f-num)}
+.big{font-family:var(--f-display);font-weight:700;font-size:2.4rem;letter-spacing:-.02em;line-height:1.05;font-variant-numeric:tabular-nums}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chips button{padding:5px 12px;font-size:.88rem}
+.chips button[aria-pressed=true]{background:var(--accent);border-color:var(--accent);color:var(--bg)}
 .payers .rec{cursor:pointer;background:none;border:none;border-bottom:1px solid var(--line);width:100%;text-align:left;font:inherit;color:inherit;border-radius:0}
 .pill{font-size:.72rem;padding:1px 8px;border-radius:999px;border:1px solid var(--line);color:var(--muted);margin-left:6px;vertical-align:1px;white-space:nowrap}
 .pill.rise{border-color:var(--out);color:var(--out)}
@@ -183,7 +204,8 @@ ol.steps{margin:6px 0 0;padding-left:1.2em;color:var(--muted);font-size:.9rem;di
   <div id="banner"></div>
 
   <nav class="tabs" role="tablist">
-    <button role="tab" data-tab="overzicht" aria-selected="true">Overzicht</button>
+    <button role="tab" data-tab="nu" aria-selected="true">Nu</button>
+    <button role="tab" data-tab="overzicht">Maand</button>
     <button role="tab" data-tab="jaar">Jaar</button>
     <button role="tab" data-tab="inzicht">Inzicht</button>
     <button role="tab" data-tab="transacties">Transacties</button>
@@ -198,7 +220,7 @@ ol.steps{margin:6px 0 0;padding-left:1.2em;color:var(--muted);font-size:.9rem;di
 <div id="toast" class="toast" hidden></div>
 
 <script>
-const VERSION='2026-10-12f';
+const VERSION='2026-10-12g';
 const clone=o=>JSON.parse(JSON.stringify(o));
 /* ---------- Basis ---------- */
 const STORE='kasboek.v1', LOCAL='kasboek.device';
@@ -264,7 +286,7 @@ const DEFAULT_STATE={tx:[],userRules:[],disabledBuiltins:[],extraCats:[],overrid
   budgets:{},goals:[],accounts:{},taxReserved:{},period:{mode:'cal',day:1,payer:''},tags:['Idonea','Jordy','Gezin','Kind','Dieren'],txTags:{},oneoff:{},cash:[],cashAuto:false,planned:[],manualBal:{},savedAt:0,wipedAt:0};
 let S=clone(DEFAULT_STATE);
 let D={tab:'',dbxKey:'',dbxRefresh:'',dbxAccess:'',dbxExp:0,pw:'',lastSync:0,syncErr:''}; // alleen dit apparaat
-let ui={tab:'overzicht',month:null,q:'',fcat:'',fmonth:'',facc:'',ftag:'',acc:'',tag:'',tagOpen:'',limit:150,taxYear:null,wipe:false,restore:false,backupText:''};
+let ui={tab:'nu',win:'14',month:null,q:'',fcat:'',fmonth:'',facc:'',ftag:'',acc:'',tag:'',tagOpen:'',limit:150,taxYear:null,wipe:false,restore:false,backupText:''};
 
 function load(){
   try{const r=localStorage.getItem(STORE);if(r){S=cleanState(JSON.parse(r));}}catch(e){}
@@ -624,7 +646,7 @@ function render(){
   renderSync();
   const v=$('#view');
   if(!TX.length&&ui.tab!=='instellingen'){v.innerHTML=emptyView();return;}
-  v.innerHTML={overzicht:viewOverzicht,jaar:viewJaar,inzicht:viewInzicht,transacties:viewTx,vast:viewVast,doelen:viewDoelen,belasting:viewTax,instellingen:viewSettings}[ui.tab]();
+  v.innerHTML={nu:viewNu,overzicht:viewOverzicht,jaar:viewJaar,inzicht:viewInzicht,transacties:viewTx,vast:viewVast,doelen:viewDoelen,belasting:viewTax,instellingen:viewSettings}[ui.tab]();
 }
 function renderSync(){
   $('#syncline').innerHTML=dbxConnected()?`<span class="status ${D.syncErr?'err':'ok'}"><i></i>${D.syncErr?'Dropbox: niet gesynchroniseerd':'Dropbox'+(D.lastSync?' · '+new Date(D.lastSync).toLocaleTimeString('nl-NL',{hour:'2-digit',minute:'2-digit'}):'')}</span>`:'Alles blijft op je eigen apparaat.';
@@ -752,6 +774,7 @@ function catOptions(sel){return allCats().map(([c])=>`<option ${c===sel?'selecte
 function currentTxList(){
   let list=TX;
   if(ui.facc) list=list.filter(t=>normIban(t.account)===ui.facc);
+  if(ui.fromDate) list=list.filter(t=>t.date>=ui.fromDate);
   if(ui.fmonth) list=list.filter(t=>t.mk===ui.fmonth);
   if(ui.fcat) list=list.filter(t=>t.cat===ui.fcat);
   if(ui.ftag) list=list.filter(t=>ui.ftag==='__none'?!t.tags.length:t.tags.includes(ui.ftag));
@@ -775,6 +798,7 @@ function viewTx(){
    </div>
    ${S.tags.length&&list.length&&(ui.q||ui.fcat||ui.fmonth||ui.facc||ui.ftag)?`<div class="bulk"><label for="bulktag">Alle ${list.length} een label geven:</label>
      <select id="bulktag">${S.tags.map(n=>`<option>${esc(n)}</option>`).join('')}</select><button class="btn-small" data-act="bulktag">Toevoegen</button><button class="btn-small" data-act="bulkuntag">Weghalen</button></div>`:''}
+   ${ui.fromDate?`<div class="row"><span class="chip">Vanaf ${fmtD(ui.fromDate)}</span><button class="btn-small" data-act="clearfrom">Alle datums</button></div>`:''}
    <div class="spread"><span class="note">${list.length} transacties · saldo <span class="num">${eur.format(total)}</span></span>
      ${uncats&&ui.fcat!=='Overig'?`<button class="btn-small" data-act="showOverig">${uncats} nog in “Overig”</button>`:''}</div>
    <div class="card" style="padding-block:4px"><div class="txlist">
@@ -789,6 +813,102 @@ function viewTx(){
    </div>`).join('')||'<p class="empty">Niets gevonden.</p>'}
    </div></div>
    ${list.length>ui.limit?`<button data-act="more">Toon meer (${list.length-ui.limit} over)</button>`:''}
+  </div>`;
+}
+
+/* ---------- Nu: hoe sta je ervoor ---------- */
+function viewNu(){
+  if(!TX.length) return emptyView();
+  const lastData=TX[0].date;
+  const sd=salaryDays(); const lastSal=sd.filter(d=>d<=lastData).pop();
+  const gaps=sd.slice(1).map((d,i)=>daysBetween(sd[i],d)).filter(g=>g>20&&g<40);
+  const nextSal=lastSal?addDays(lastSal,Math.round(gaps.length?median(gaps):30)):null;
+  if(ui.win==='sal'&&!lastSal) ui.win='14';
+  const from=ui.win==='sal'?lastSal:addDays(lastData,-(+ui.win)+1);
+  const salName=(payerCandidates().find(x=>x.key===salaryKey())||{}).name||'salaris';
+  // saldo's
+  const B=accountBalances();
+  const accs=Object.keys(COV).filter(i=>!isSaveAcc(S.accounts[i])&&(!ui.acc||i===ui.acc)&&B[i]&&B[i].length);
+  const prevDay=addDays(from,-1);
+  const accRows=accs.map(i=>{const ser=B[i];let start=balAt(ser,prevDay);
+    if(start==null){const first=S.tx.filter(t=>normIban(t.account)===i&&t.date===ser[0].date);start=ser[0].bal-first.reduce((a,t)=>a+t.amount,0);}
+    const end=balAt(ser,lastData); return {i,label:(S.accounts[i]||{}).label||i,start,end,last:ser[ser.length-1].date};});
+  const startBal=accRows.reduce((a,r)=>a+r.start,0), endBal=accRows.reduce((a,r)=>a+r.end,0);
+  // transacties in venster
+  const win=TX.filter(t=>t.date>=from&&t.date<=lastData&&inScope(t,true)&&(!ui.tag));
+  const groups={};
+  for(const t of win){ let key=t.cat, label=t.cat, color=catColor(t.cat);
+    if(t.cat==='Eigen rekening'){ if(!ui.acc) continue; key='__own'; label='Naar/van je andere rekeningen'; color='var(--muted)'; }
+    else if(t.cat==='Sparen'){label=t.amount<0?'Naar spaarrekening':'Van spaarrekening';}
+    else if(t.cat==='Contant gespaard'){label='Gepind voor spaarpot';}
+    else if(t.cat==='Overboeking eigen rekening'){ const a=S.accounts[normIban(t.counter)]; label=(t.amount<0?'Naar ':'Van ')+((a&&a.label)||'eigen rekening'); key='__ov'+normIban(t.counter)+(t.amount<0?'-':'+'); }
+    const g=groups[key]||(groups[key]={key,cat:t.cat,label,color,sum:0,n:0}); g.sum+=t.amount; g.n++; }
+  const lines=Object.values(groups).filter(g=>Math.abs(g.sum)>=0.5);
+  const pos=lines.filter(g=>g.sum>0).sort((a,b)=>b.sum-a.sum), neg=lines.filter(g=>g.sum<0).sort((a,b)=>a.sum-b.sum);
+  const hasBal=accRows.length>0;
+  let run=hasBal?startBal:0; const steps=[];
+  for(const g of [...pos,...neg]){ const a=run; run+=g.sum; steps.push({...g,a,b:run}); }
+  const calcEnd=run; const gap=hasBal?endBal-calcEnd:0;
+  const vals=[hasBal?startBal:0,...steps.map(x=>x.b),hasBal?endBal:0]; const vmin=Math.min(...vals), vmax=Math.max(...vals); const pad=(vmax-vmin)*.12||100; const lo=vmin<0||vmin-pad<0&&vmin<pad*3?Math.min(0,vmin-pad):vmin-pad, hi=vmax+pad*.3; const span=(hi-lo)||1;
+  const P=v=>((v-lo)/span*100);
+  const bar=(a,b,col)=>`<span class="bar" style="left:${P(Math.min(a,b)).toFixed(2)}%;width:${Math.max(.6,Math.abs(P(b)-P(a))).toFixed(2)}%;background:${col}"></span>`;
+  const tot=(v,col)=>`<span class="bar" style="left:calc(${P(v).toFixed(2)}% - 3px);width:6px;min-width:6px;top:-3px;bottom:-3px;background:${col}"></span>`;
+  const zero=lo<0&&hi>0?`<span style="position:absolute;top:-3px;bottom:-3px;left:${P(0).toFixed(2)}%;width:1px;background:var(--ink);opacity:.4"></span>`:'';
+  const inTot=pos.reduce((a,g)=>a+g.sum,0), outTot=neg.reduce((a,g)=>a+g.sum,0);
+  // per dag
+  const days=[];for(let d=from;d<=lastData;d=addDays(d,1))days.push(d);
+  const perDay=days.map(d=>win.filter(t=>t.date===d&&t.amount<0&&!IGNORE.has(t.cat)&&!SAVING.has(t.cat)).reduce((a,t)=>a-t.amount,0));
+  const dmax=Math.max(1,...perDay);
+  const dayChart=`<div class="days" role="img" aria-label="Uitgaven per dag">${perDay.map((v,i)=>{const d=days[i];const wk=new Date(d+'T12:00:00Z').getUTCDay();
+      return `<div class="day" title="${fmtD(d)}: ${eur.format(v)}"><div class="col"><span style="height:${(v/dmax*100).toFixed(1)}%;opacity:${wk===0||wk===6?.6:1}"></span></div><small>${days.length<=16||i%2===0?+d.slice(8):''}</small></div>`;}).join('')}</div>`;
+  // grootste uitgaven
+  const bigTx=win.filter(t=>t.amount<0&&!IGNORE.has(t.cat)&&!SAVING.has(t.cat)).sort((a,b)=>a.amount-b.amount).slice(0,8);
+  // komt nog tot salaris
+  const comingEnd=nextSal&&nextSal>lastData?addDays(nextSal,-1):addDays(lastData,30);
+  const rec=recurring().filter(r=>r.next>lastData&&r.next<=comingEnd).map(r=>({name:r.name,date:r.next,amount:r.amount}));
+  const pl=plannedOpen().filter(p=>p.date>lastData&&p.date<=comingEnd&&p.from!=='pot').map(p=>({name:p.name+' (gepland)',date:p.date,amount:+p.amount}));
+  const coming=[...rec,...pl].sort((a,b)=>a.date.localeCompare(b.date)); const comingTot=coming.reduce((a,c)=>a+c.amount,0);
+  const free=endBal-comingTot; const daysLeft=nextSal?Math.max(1,daysBetween(lastData,nextSal)):null;
+  const winLabel=ui.win==='sal'?`sinds ${esc(salName)} op ${fmtD(from)}`:`de afgelopen ${ui.win==='14'?'2 weken':'4 weken'}`;
+  const jordyMissing=!S.sample&&!ui.acc&&Object.values(S.accounts).filter(a=>a.type==='betaal').length<2;
+  return `<div class="stack">
+   <div class="spread"><span class="note">Laatste transactie: <b>${fmtD(lastData)} ${lastData.slice(0,4)}</b>${daysBetween(lastData,todayISO())>3?` · <span class="warn">laad een nieuw afschrift in voor de stand van vandaag</span>`:''}</span><div class="row">${scopeSelect()}</div></div>
+   ${ui.acc?`<div class="row"><span class="chip">Alleen ${esc((S.accounts[ui.acc]||{}).label||'')}</span><button class="btn-small" data-act="scopeall">Alles tonen</button></div>`:''}
+
+   <div class="card stack"><h3>Op de rekening${accRows.length>1?'en':''}</h3>
+     ${hasBal?`<div class="big ${endBal<0?'out':''}">${eur.format(endBal)}</div>
+     ${accRows.length>1?`<div class="legend" style="gap:6px 16px">${accRows.map(r=>`<span>${esc(r.label)} <b class="num ${r.end<0?'out':''}">${eur0.format(r.end)}</b></span>`).join('')}</div>`:''}
+     ${nextSal&&nextSal>lastData?`<div class="potbox" style="margin-top:4px">
+       <div><h3>Gaat nog af vóór ${fmtD(nextSal)}</h3><div class="num out">− ${eur0.format(comingTot)}</div></div>
+       <div><h3>Vrij te besteden</h3><div class="num ${free<0?'out':'in'}">${eur0.format(free)}</div></div>
+       <div><h3>Per dag tot salaris</h3><div class="num ${free<0?'out':''}">${eur.format(free/daysLeft)}</div></div></div>`:''}`
+     :'<p class="note">Deze bestanden hebben geen saldo-kolom. Download de CSV opnieuw uit Mijn ING; daar staat "Saldo na mutatie" standaard in.</p>'}
+     ${jordyMissing?'<p class="note">Jordy\'s rekening staat er nog niet in. Wat hij betaalt of overmaakt zie je alleen als het via jullie rekeningen loopt.</p>':''}
+   </div>
+
+   <div class="chips" role="group" aria-label="Periode">
+     ${lastSal?`<button data-act="win" data-v="sal" aria-pressed="${ui.win==='sal'}">Sinds salaris (${fmtD(lastSal)})</button>`:''}
+     <button data-act="win" data-v="14" aria-pressed="${ui.win==='14'}">2 weken</button>
+     <button data-act="win" data-v="28" aria-pressed="${ui.win==='28'}">4 weken</button></div>
+
+   <div class="card stack"><div><h2>Waar het geld heen ging</h2><p class="sub">${winLabel[0].toUpperCase()+winLabel.slice(1)}: <span class="in num">+${eur0.format(inTot)}</span> binnen, <span class="out num">−${eur0.format(-outTot)}</span> eruit.</p></div>
+     <div class="wf">
+       ${hasBal?`<div class="r tot"><span class="nm"><span>Saldo op ${fmtD(prevDay)}</span></span><span class="tr">${zero}${tot(startBal,'var(--accent)')}</span><span class="amt">${eur0.format(startBal)}</span></div>`:''}
+       ${steps.map(g=>`<button class="r" data-act="nucat" data-cat="${esc(g.cat)}" data-from="${from}" title="${g.n} transacties"><span class="nm"><span class="dot" style="background:${g.color}"></span><span>${esc(g.label)}</span></span><span class="tr">${zero}${bar(g.a,g.b,g.sum>0?'var(--in)':'var(--out)')}</span><span class="amt ${g.sum>0?'in':'out'}">${g.sum>0?'+':'−'}${nf0.format(Math.abs(g.sum))}</span></button>`).join('')}
+       ${hasBal&&Math.abs(gap)>=5?`<div class="r"><span class="nm"><span class="dot" style="background:var(--line)"></span><span>Niet ingedeeld</span></span><span class="tr">${zero}${bar(calcEnd,endBal,'var(--muted)')}</span><span class="amt">${gap>0?'+':'−'}${nf0.format(Math.abs(gap))}</span></div>`:''}
+       ${hasBal?`<div class="r tot"><span class="nm"><span>Saldo nu</span></span><span class="tr">${zero}${tot(endBal,endBal<0?'var(--out)':'var(--accent)')}</span><span class="amt ${endBal<0?'out':''}">${eur0.format(endBal)}</span></div>`:''}
+     </div>
+     <p class="note">Van boven naar beneden: wat er op ${fmtD(prevDay)} stond, wat erbij kwam en wat eraf ging, tot het saldo van nu. Tik op een regel voor de transacties.</p>
+   </div>
+
+   <div class="card stack"><h2>Uitgaven per dag</h2>${dayChart}<p class="note">Lichter = weekend. ${Math.max(0,...perDay)>0?`Hoogste dag: ${eur0.format(Math.max(...perDay))} op ${fmtD(days[perDay.indexOf(Math.max(...perDay))])}.`:'Geen uitgaven in deze periode.'}</p></div>
+
+   <div class="card stack"><h2>Grootste uitgaven</h2>
+     <div>${bigTx.map(t=>`<div class="rec"><div style="min-width:0"><b>${esc(t.name||t.desc)}</b><span class="pill">${esc(t.cat)}</span><div class="meta">${fmtD(t.date)}${Object.keys(COV).length>1?' · '+esc((S.accounts[normIban(t.account)]||{}).label||''):''}</div></div><div class="amt num out">${eur.format(-t.amount)}</div></div>`).join('')||'<p class="note">Geen uitgaven in deze periode.</p>'}</div></div>
+
+   ${coming.length?`<div class="card stack"><div class="spread"><h2>Gaat nog af${nextSal&&nextSal>lastData?` vóór ${fmtD(nextSal)}`:''}</h2><span class="num out">− ${eur0.format(comingTot)}</span></div>
+     <div>${coming.map(c=>`<div class="rec"><div style="min-width:0"><b>${esc(c.name)}</b><div class="meta">rond ${fmtD(c.date)}</div></div><div class="amt num">${eur.format(c.amount)}</div></div>`).join('')}</div>
+     <p class="note">Geschat uit eerdere afschrijvingen en je geplande uitgaven.</p></div>`:''}
   </div>`;
 }
 
@@ -1506,7 +1626,7 @@ async function copyText(text,fallbackId){
   try{await navigator.clipboard.writeText(text);toast('Gekopieerd.');}
   catch(e){const el=document.getElementById(fallbackId); if(el){el.focus();el.select();} toast('Kopiëren lukte niet automatisch. De tekst staat geselecteerd.');}
 }
-function goTab(t){ui.tab=t;D.tab=t;saveDevice();ui.wipe=false;ui.restore=false;render();window.scrollTo(0,0);}
+function goTab(t){ui.tab=t;if(t!=='transacties')ui.fromDate='';D.tab=t;saveDevice();ui.wipe=false;ui.restore=false;render();window.scrollTo(0,0);}
 document.querySelector('nav.tabs').addEventListener('click',e=>{const b=e.target.closest('button[data-tab]');if(b)goTab(b.dataset.tab);});
 document.addEventListener('click',async e=>{
   const b=e.target.closest('[data-act]'); if(!b) return; const a=b.dataset.act; const ms=months();
@@ -1527,6 +1647,9 @@ document.addEventListener('click',async e=>{
     if(!cat&&!tg){toast('Kies een categorie, een label, of allebei.');return;}
     const n=addRule({match:m,dir:$('#r-dir').value,cat,tags:tg?[tg]:[]});toast(n?`Regel toegevoegd, geldt voor ${n} transacties.`:'Regel toegevoegd, maar er is nog geen transactie die erop lijkt. Controleer de tekst.');}
   if(a==='scopeall'){ui.acc='';ui.tag='';ui.month=null;render();}
+  if(a==='clearfrom'){ui.fromDate='';render();}
+  if(a==='win'){ui.win=b.dataset.v;render();}
+  if(a==='nucat'){ui.tab='transacties';ui.q='';ui.limit=150;ui.facc=ui.acc;ui.ftag='';ui.fmonth='';ui.fcat=b.dataset.cat;ui.fromDate=b.dataset.from;render();window.scrollTo(0,0);}
   if(a==='ycat'||a==='ytag'){ui.tab='transacties';ui.q='';ui.limit=150;ui.facc=ui.acc;
     if(a==='ycat'){ui.fcat=b.dataset.key;ui.ftag=ui.tag;}else{ui.ftag=b.dataset.key;ui.fcat='';}
     ui.fmonth=b.dataset.mk||''; render();window.scrollTo(0,0);}
@@ -1635,7 +1758,8 @@ document.addEventListener('visibilitychange',()=>{if(document.visibilityState===
 /* ---------- Start ---------- */
 load();
 if(S.sample&&!S.tx.length) S=sampleState();
-if(D.tab&&['overzicht','jaar','inzicht','transacties','vast','doelen','belasting','instellingen'].includes(D.tab)) ui.tab=D.tab;
+if(!D.seenNu){D.seenNu=true;D.tab='nu';saveDevice();}
+if(D.tab&&['nu','overzicht','jaar','inzicht','transacties','vast','doelen','belasting','instellingen'].includes(D.tab)) ui.tab=D.tab;
 render();
 (async()=>{ if(IN_FRAME) return; const fresh=await dbxHandleRedirect(); if(dbxConnected()) dbxSync(!fresh); })();
 </script>

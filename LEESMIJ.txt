@@ -1,11 +1,12 @@
-Kasboek — versie 2026-10-12f
+Kasboek — versie 2026-10-12g
 
 UPDATEN
 Upload alle bestanden uit deze map over de oude heen in je GitHub-repository.
 
-OPGELOST
-- "Over" kon veel te hoog uitvallen. Overboekingen naar een eigen rekening werden weggestreept,
-  ook als die rekening (of die periode) niet was ingeladen. Dan verdwenen de uitgaven van die
-  rekening uit beeld. Nu tellen zulke overboekingen gewoon mee als uitgave (of inkomen).
-- Nieuw bij Inzicht: "Klopt het?" — vergelijkt "over" met je echte saldo uit de afschriften,
-  laat per rekening zien welke periode is ingeladen, en wat Kasboek als inkomen telt.
+NIEUW: tabblad "Nu" (opent voortaan als eerste)
+- Saldo op je rekeningen nu (uit de saldo-kolom van je ING-afschrift).
+- Wat er nog afgaat tot je volgende salaris, en wat er vrij te besteden is (ook per dag).
+- "Waar het geld heen ging": stap voor stap van het saldo 2 weken geleden naar nu
+  (of sinds je salaris, of 4 weken).
+- Uitgaven per dag en de grootste uitgaven.
+- Het oude "Overzicht" heet nu "Maand".
