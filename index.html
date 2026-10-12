@@ -236,7 +236,7 @@ ol.steps{margin:6px 0 0;padding-left:1.2em;color:var(--muted);font-size:.9rem;di
 <div id="toast" class="toast" hidden></div>
 
 <script>
-const VERSION='2026-10-12i';
+const VERSION='2026-10-12j';
 const clone=o=>JSON.parse(JSON.stringify(o));
 /* ---------- Basis ---------- */
 const STORE='kasboek.v1', LOCAL='kasboek.device';
@@ -622,7 +622,7 @@ function recurring(){
     const amount=rise?lastAmt:med;
     const factor={maand:1,kwartaal:1/3,halfjaar:1/6,jaar:1/12}[freq];
     const next=new Date(last.date); next.setDate(next.getDate()+Math.round(g));
-    res.push({name:last.name,cat:last.cat,freq,amount,monthly:amount*factor,last:last.date,next:next.toISOString().slice(0,10),count:sorted.length,rise});
+    res.push({account:normIban(last.account),name:last.name,cat:last.cat,freq,amount,monthly:amount*factor,last:last.date,next:next.toISOString().slice(0,10),count:sorted.length,rise});
   }
   return res.sort((a,b)=>b.monthly-a.monthly);
 }
@@ -883,10 +883,12 @@ function viewNu(){
   const bigTx=win.filter(t=>t.amount<0&&!IGNORE.has(t.cat)&&!SAVING.has(t.cat)).sort((a,b)=>a.amount-b.amount).slice(0,8);
   // komt nog tot salaris
   const comingEnd=nextSal&&nextSal>lastData?addDays(nextSal,-1):addDays(lastData,30);
-  const rec=recurring().filter(r=>r.next>lastData&&r.next<=comingEnd).map(r=>({name:r.name,date:r.next,amount:r.amount}));
+  const spendSet=new Set(accRows.filter(r=>(S.accounts[r.i]||{}).spend!==false).map(r=>r.i));
+  const rec=recurring().filter(r=>r.next>lastData&&r.next<=comingEnd&&(!r.account||!accRows.length||spendSet.has(r.account))).map(r=>({name:r.name,date:r.next,amount:r.amount}));
   const pl=plannedOpen().filter(p=>p.date>lastData&&p.date<=comingEnd&&p.from!=='pot').map(p=>({name:p.name+' (gepland)',date:p.date,amount:+p.amount}));
   const coming=[...rec,...pl].sort((a,b)=>a.date.localeCompare(b.date)); const comingTot=coming.reduce((a,c)=>a+c.amount,0);
-  const free=endBal-comingTot; const daysLeft=nextSal?Math.max(1,daysBetween(lastData,nextSal)):null;
+  const spendBal=accRows.filter(r=>spendSet.has(r.i)).reduce((a,r)=>a+r.end,0);
+  const free=spendBal-comingTot; const stale=accRows.filter(r=>daysBetween(r.last,lastData)>3); const daysLeft=nextSal?Math.max(1,daysBetween(lastData,nextSal)):null;
   const winLabel=ui.win==='sal'?`sinds ${esc(salName)} op ${fmtD(from)}`:`de afgelopen ${ui.win==='14'?'2 weken':'4 weken'}`;
   const jordyMissing=!S.sample&&!ui.acc&&Object.values(S.accounts).filter(a=>a.type==='betaal').length<2;
   return `<div class="stack">
@@ -895,12 +897,15 @@ function viewNu(){
 
    <div class="card stack"><h3>Op de rekening${accRows.length>1?'en':''}</h3>
      ${hasBal?`<div class="big ${endBal<0?'out':''}">${eur.format(endBal)}</div>
-     ${accRows.length>1?`<div class="legend" style="gap:6px 16px">${accRows.map(r=>`<span>${esc(r.label)} <b class="num ${r.end<0?'out':''}">${eur0.format(r.end)}</b></span>`).join('')}</div>`:''}
+     <div>${accRows.map(r=>{const st=daysBetween(r.last,lastData)>3||daysBetween(r.last,todayISO())>3;const on=spendSet.has(r.i);return `<div class="rec"><div style="min-width:0"><b>${esc(r.label)}</b>
+        <div class="meta ${st?'warn':''}">stand op ${fmtD(r.last)} ${r.last.slice(0,4)}${daysBetween(r.last,lastData)>3?' · ouder dan de andere rekeningen, laad een nieuw afschrift in':daysBetween(r.last,todayISO())>3?' · niet van vandaag':''}</div></div>
+        <div class="amt"><div class="num ${r.end<0?'out':''}">${eur.format(r.end)}</div>${accRows.length>1?`<button class="tagchip ${on?'on':'add'}" style="margin-top:4px;${on?'border-color:var(--in)':''}" data-act="spendtoggle" data-iban="${esc(r.i)}" aria-pressed="${on}">${on?'✓ telt mee':'telt niet mee'}</button>`:''}</div></div>`;}).join('')}</div>
      ${nextSal&&nextSal>lastData?`<div class="potbox" style="margin-top:4px">
        <div><h3>Gaat nog af vóór ${fmtD(nextSal)}</h3><div class="num out">− ${eur0.format(comingTot)}</div></div>
-       <div><h3>Vrij te besteden</h3><div class="num ${free<0?'out':'in'}">${eur0.format(free)}</div></div>
+       <div><h3>Vrij te besteden${spendSet.size<accRows.length?` <span style="text-transform:none;letter-spacing:0">(${[...spendSet].map(i=>esc((S.accounts[i]||{}).label||'')).join(' + ')})</span>`:''}</h3><div class="num ${free<0?'out':'in'}">${eur0.format(free)}</div></div>
        <div><h3>Per dag tot salaris</h3><div class="num ${free<0?'out':''}">${eur.format(free/daysLeft)}</div></div></div>`:''}`
      :'<p class="note">Deze bestanden hebben geen saldo-kolom. Download de CSV opnieuw uit Mijn ING; daar staat "Saldo na mutatie" standaard in.</p>'}
+     ${accRows.length>1?'<p class="note">"Vrij te besteden" = het saldo van de rekeningen die meetellen, min wat er nog afgaat vóór je salaris. Zet de vaste-lastenrekening op <i>telt niet mee</i> als dat geld al bestemd is voor de vaste lasten.</p>':''}
      ${jordyMissing?'<p class="note">Jordy\'s rekening staat er nog niet in. Wat hij betaalt of overmaakt zie je alleen als het via jullie rekeningen loopt.</p>':''}
    </div>
 
@@ -1679,6 +1684,7 @@ document.addEventListener('click',async e=>{
     const n=addRule({match:m,dir:$('#r-dir').value,cat,tags:tg?[tg]:[]});toast(n?`Regel toegevoegd, geldt voor ${n} transacties.`:'Regel toegevoegd, maar er is nog geen transactie die erop lijkt. Controleer de tekst.');}
   if(a==='scopeall'){ui.acc='';ui.tag='';ui.month=null;render();}
   if(a==='clearfrom'){ui.fromDate='';render();}
+  if(a==='spendtoggle'){const ac=S.accounts[b.dataset.iban];if(ac){ac.spend=ac.spend===false?true:false;save();render();}}
   if(a==='win'){ui.win=b.dataset.v;render();}
   if(a==='nucat'){ui.tab='transacties';ui.q='';ui.limit=150;ui.facc=ui.acc;ui.ftag='';ui.fmonth='';ui.fcat=b.dataset.cat;ui.fromDate=b.dataset.from;render();window.scrollTo(0,0);}
   if(a==='ycat'||a==='ytag'){ui.tab='transacties';ui.q='';ui.limit=150;ui.facc=ui.acc;

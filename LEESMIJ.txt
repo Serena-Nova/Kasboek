@@ -1,10 +1,10 @@
-Kasboek — versie 2026-10-12i
+Kasboek — versie 2026-10-12j
 
 UPDATEN
 Upload alle bestanden uit deze map over de oude heen in je GitHub-repository.
 
-VERANDERD
-- "Waar het geld heen ging" (tabblad Nu) is nu een kassabon:
-  saldo begin, Binnen, Vaste lasten, Dagelijks, Vrij besteedbaar, Opzij gezet, saldo nu.
-  Tik op een groep om de categorieën te zien, en daarna op een regel voor de transacties.
-- Overboekingen die tussen jullie rekeningen "onderweg" zijn, staan nu apart in plaats van "Niet ingedeeld".
+VERANDERD (tabblad Nu)
+- Per rekening: saldo én de datum van die stand. Oranje als het afschrift ouder is dan de andere.
+- Per rekening kies je "telt mee" / "telt niet mee" voor "Vrij te besteden"
+  (handig voor de vaste-lastenrekening, waarvan het geld al bestemd is).
+- "Gaat nog af" telt alleen vaste lasten van de rekeningen die meetellen.
