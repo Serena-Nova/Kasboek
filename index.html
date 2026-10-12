@@ -198,7 +198,7 @@ ol.steps{margin:6px 0 0;padding-left:1.2em;color:var(--muted);font-size:.9rem;di
 <div id="toast" class="toast" hidden></div>
 
 <script>
-const VERSION='2026-10-12e';
+const VERSION='2026-10-12f';
 const clone=o=>JSON.parse(JSON.stringify(o));
 /* ---------- Basis ---------- */
 const STORE='kasboek.v1', LOCAL='kasboek.device';
@@ -217,11 +217,11 @@ const CATS=[
  ['Energie & water','#D0A21F'],['Internet & telefoon','#3C9FA8'],['Verzekeringen','#5A7A8C'],['Abonnementen','#C25C8E'],
  ['Vervoer','#8C6A4A'],['Kinderen','#E07A5F'],['Vakantie & uitjes','#3E9CC4'],['Huisdieren','#B07D3A'],['Gezondheid','#4FA37A'],['Uit eten','#D46A3A'],
  ['Winkelen','#9C7BB0'],['Belastingen','#A04848'],['Schrijfkosten','#6A8D3A'],['Contant opgenomen','#7F8C88'],
- ['Sparen','#1F6F66'],['Contant gespaard','#2E8B6E'],['Belastingreservering','#4C6FB0'],['Eigen rekening','#B3BDB9'],['Overig','#9AA6A2']
+ ['Sparen','#1F6F66'],['Contant gespaard','#2E8B6E'],['Belastingreservering','#4C6FB0'],['Eigen rekening','#B3BDB9'],['Overboeking eigen rekening','#8E7CA8'],['Overig','#9AA6A2']
 ];
 const SAVING=new Set(['Sparen','Contant gespaard','Belastingreservering']);   // apart zetten, geen uitgave
 const IGNORE=new Set(['Eigen rekening']);
-const INCOME=new Set(['Inkomsten','Royalties']);                  // overboeking tussen eigen betaalrekeningen
+const INCOME=new Set(['Inkomsten','Royalties','Overboeking eigen rekening']);                  // overboeking tussen eigen betaalrekeningen
 const ACC_TYPES={betaal:'Betaalrekening',gezamenlijk:'Gezamenlijke rekening',spaar:'Spaarrekening',pot:'Belastingpot (spaar)'};
 const TAG_COLORS=['#C25C8E','#2F6E9E','#C9822B','#E07A5F','#6A8D3A','#7A5CC2','#3C9FA8','#8C6A4A','#A04848','#4FA37A'];
 const isSaveAcc=a=>a&&(a.type==='spaar'||a.type==='pot');
@@ -307,10 +307,14 @@ function categorize(t){
   if(ctr){ if(isSaveAcc(own)) return 'Eigen rekening';
            if(ctr.type==='pot') return 'Belastingreservering';
            if(ctr.type==='spaar') return 'Sparen';
-           return 'Eigen rekening'; }
+           // alleen wegstrepen als Kasboek de andere kant ook heeft (zelfde periode); anders telt het gewoon mee
+           return covers(normIban(t.counter),t.date)?'Eigen rekening':'Overboeking eigen rekening'; }
   for(const r of activeRules()){ if(r.cat&&ruleMatches(r,t)) return r.cat; }
   return t.amount>0?'Inkomsten':'Overig';
 }
+let COV={};
+function buildCoverage(){COV={};for(const t of S.tx){const i=normIban(t.account);if(!i)continue;const c=COV[i]||(COV[i]={min:t.date,max:t.date,n:0});if(t.date<c.min)c.min=t.date;if(t.date>c.max)c.max=t.date;c.n++;}}
+function covers(iban,date){const c=COV[iban];return !!c&&date>=addDays(c.min,-3)&&date<=addDays(c.max,3);}
 const tagColor=n=>TAG_COLORS[Math.max(0,S.tags.indexOf(n))%TAG_COLORS.length];
 function tagsFor(t){
   if(S.txTags[t.id]) return S.txTags[t.id].filter(x=>S.tags.includes(x));
@@ -320,7 +324,7 @@ function tagsFor(t){
 }
 const tagChip=(n,on,attrs='')=>`<button class="tagchip ${on?'on':''}" ${attrs} style="${on?`border-color:${tagColor(n)}`:''}"><span class="dot" style="background:${tagColor(n)}"></span>${esc(n)}</button>`;
 let TX=[];
-function rebuild(){buildPeriods();TX=S.tx.map(t=>({...t,cat:categorize(t),tags:tagsFor(t),mk:periodKey(t.date)})).sort((a,b)=>b.date.localeCompare(a.date));
+function rebuild(){buildCoverage();buildPeriods();TX=S.tx.map(t=>({...t,cat:categorize(t),tags:tagsFor(t),mk:periodKey(t.date)})).sort((a,b)=>b.date.localeCompare(a.date));
   if(S.cashAuto){const sd=salaryDays();for(const t of TX){ if(t.cat==='Contant opgenomen'&&!S.overrides[t.id]&&afterSalary(t.date,sd)) t.cat='Contant gespaard'; }}}
 /* ---------- Salaris, contante spaarpot, planning, saldo ---------- */
 function salaryKey(){ if(S.period&&S.period.payer) return S.period.payer;
@@ -867,6 +871,7 @@ function viewJaar(){
      <div class="stat"><h3>Binnen</h3><div class="v in">${eur0.format(tIn)}</div></div>
      <div class="stat"><h3>Over</h3><div class="v ${tIn-tOut-tSav<0?'out':''}">${eur0.format(tIn-tOut-tSav)}</div></div>
    </div>
+   <p class="note">"Over" = binnen min uitgegeven min gespaard. Dat is hoeveel je saldo in deze periode steeg of daalde, geen geld dat nu klaarligt. Klopt het niet met je gevoel? Kijk bij Inzicht → <b>Klopt het?</b></p>
    ${gShare.length?`<div class="card stack"><h2>Waar het geld heen gaat</h2>
      <div style="display:flex;height:16px;border-radius:8px;overflow:hidden;gap:2px">${gShare.map(([g,v])=>`<span title="${g}: ${eur0.format(v)}" style="flex:${v};background:${gCol[g]}"></span>`).join('')}</div>
      <div class="legend">${gShare.map(([g,v])=>`<span><i style="background:${gCol[g]}"></i>${g} <b class="num">${Math.round(v/tOut*100)}%</b> · <span class="num">${eur0.format(v/full)}</span>/mnd</span>`).join('')}</div></div>`:''}
@@ -954,6 +959,7 @@ function viewInzicht(){
 
   return `<div class="stack">
    ${scopeBar()}
+   ${checkCard()}
    <div class="card stack"><h2>Wat je realistisch kunt sparen</h2>
      <p class="sub">Op basis van de laatste ${last12.length} afgesloten maanden${oneoffAvg?', zonder de uitgaven die je als eenmalig hebt gemarkeerd':''}.</p>
      <div class="potbox">
@@ -1047,6 +1053,38 @@ function balanceCard(){
     ${buffer&&!ui.acc?`<div class="banner" style="margin:0;background:var(--accent-soft)"><div><b style="color:var(--accent)">Buffer:</b> drie maanden vaste lasten is ongeveer <strong class="num">${eur0.format(buffer)}</strong>. ${reserves>=buffer?`Je spaargeld en spaarpot (${eur0.format(reserves)}) dekken dat.`:`Aan spaargeld en spaarpot staat er nu ${eur0.format(reserves)}${Object.keys(S.manualBal||{}).length?'':' (vul het saldo van je spaarrekening in bij Instellingen → Rekeningen)'}.`}</div></div>`:''}
   </div>`;
 }
+function checkCard(){
+  if(ui.tag||ui.acc) return '';
+  const B=accountBalances(); const own=Object.keys(COV).filter(i=>!isSaveAcc(S.accounts[i]));
+  if(!own.length) return '';
+  const rows=own.map(i=>{const c=COV[i];const ser=B[i]||[];const first=S.tx.filter(t=>normIban(t.account)===i&&t.date===c.min);
+    const startBal=ser.length?ser[0].bal-first.reduce((a,t)=>a+t.amount,0):null; const endBal=ser.length?ser[ser.length-1].bal:null;
+    return {i,label:(S.accounts[i]||{}).label||i,min:c.min,max:c.max,n:c.n,startBal,endBal};});
+  const start=rows.map(r=>r.min).sort()[rows.length-1], from=rows.map(r=>r.min).sort()[0];
+  const late=rows.filter(r=>daysBetween(from,r.min)>20);
+  const haveBal=rows.every(r=>r.startBal!=null);
+  const dBal=haveBal?rows.reduce((a,r)=>a+(r.endBal-r.startBal),0):null;
+  const all=months().map(monthSum); const overAll=all.reduce((a,x)=>a+x.inc-x.out-x.saved,0);
+  const diff=haveBal?overAll-dBal:0; const ok=haveBal&&Math.abs(diff)<50&&!late.length;
+  const unloaded=TX.filter(t=>t.cat==='Overboeking eigen rekening'); const unl={};
+  unloaded.forEach(t=>{const k=normIban(t.counter);const o=unl[k]||(unl[k]={label:(S.accounts[k]||{}).label||k,sum:0,n:0});o.sum+=t.amount;o.n++;});
+  const incTop={}; TX.filter(t=>t.amount>0&&t.cat==='Inkomsten').forEach(t=>{const k=payerKey(t)||'?';const o=incTop[k]||(incTop[k]={name:t.name||t.desc,sum:0,n:0});o.sum+=t.amount;o.n++;});
+  const incList=Object.values(incTop).sort((a,b)=>b.sum-a.sum).slice(0,6);
+  return `<details class="card stack" ${ok?'':'open'}><summary><b>Klopt het?</b> ${ok?'<span class="in">✓ "Over" komt overeen met je saldo</span>':'<span class="warn">even controleren</span>'}</summary>
+   <div class="stack" style="margin-top:10px">
+    <p class="note">"Over" betekent bij Kasboek: hoeveel het saldo op je betaalrekeningen omhoog of omlaag ging, nadat je geld naar sparen zette. Het is dus geen geld dat ergens klaarligt. Als je nu blut bent, hoort "over" laag of negatief te zijn.</p>
+    <div class="ywrap"><table class="yt"><thead><tr><th>Rekening</th><th>Van</th><th>Tot</th><th>Saldo begin</th><th>Saldo eind</th></tr></thead><tbody>
+     ${rows.map(r=>`<tr class="crow"><td><span class="nm"><span>${esc(r.label)}</span></span></td><td class="${late.includes(r)?'warn':''}">${fmtD(r.min)} '${r.min.slice(2,4)}</td><td>${fmtD(r.max)} '${r.max.slice(2,4)}</td><td>${r.startBal==null?'–':nf0.format(r.startBal)}</td><td>${r.endBal==null?'–':nf0.format(r.endBal)}</td></tr>`).join('')}
+     ${haveBal?`<tr class="foot first"><td>Saldo veranderd</td><td></td><td></td><td></td><td class="${dBal<0?'out':'in'}">${dBal<0?'−':'+'}${nf0.format(Math.abs(dBal))}</td></tr>
+     <tr class="foot"><td>Kasboek telt als "over"</td><td></td><td></td><td></td><td class="${overAll<0?'out':'in'}">${overAll<0?'−':'+'}${nf0.format(Math.abs(overAll))}</td></tr>`:''}
+    </tbody></table></div>
+    ${late.length?`<p class="warn">${late.map(r=>`<b>${esc(r.label)}</b> begint pas op ${fmtD(r.min)} ${r.min.slice(0,4)}`).join(', ')}, de rest al op ${fmtD(from)} ${from.slice(0,4)}. Laad ${late.length>1?'die':'die rekening'} ook vanaf ${fmtD(from)} ${from.slice(0,4)} in. Tot die tijd tellen overboekingen ernaartoe als uitgave, zodat "over" niet te hoog wordt.</p>`:''}
+    ${haveBal&&Math.abs(diff)>=50?`<p class="warn">Er zit ${eur0.format(Math.abs(diff))} verschil tussen "over" en je echte saldo. Dat komt meestal door een rekening die niet (helemaal) is ingeladen, of door ontbrekende maanden.</p>`:''}
+    ${!haveBal?'<p class="note">Niet alle bestanden hebben een saldo-kolom, dus Kasboek kan het niet met je echte saldo vergelijken.</p>':''}
+    ${Object.keys(unl).length?`<div class="stack-s"><h3>Overboekingen naar eigen rekeningen die niet (in die periode) zijn ingeladen</h3>${Object.values(unl).map(o=>`<div class="rec"><div style="min-width:0"><b>${esc(o.label)}</b><div class="meta">${o.n}× · telt nu mee als ${o.sum<0?'uitgave':'inkomen'}</div></div><div class="amt num ${o.sum<0?'out':'in'}">${eur0.format(o.sum)}</div></div>`).join('')}</div>`:''}
+    ${incList.length?`<div class="stack-s"><h3>Wat Kasboek als inkomen telt</h3><p class="note">Staat hier iets tussen dat geen inkomen is, zoals een Tikkie terug of een overboeking van Jordy? Tik erop en zet die transacties op een andere categorie.</p>${incList.map(o=>`<button class="rec" style="cursor:pointer;background:none;border:none;border-bottom:1px solid var(--line);width:100%;text-align:left;font:inherit;color:inherit;border-radius:0" data-act="ypayer" data-q="${esc(o.name)}"><div style="min-width:0"><b>${esc(o.name)}</b><div class="meta">${o.n}×</div></div><div class="amt num in">${eur0.format(o.sum)}</div></button>`).join('')}</div>`:''}
+   </div></details>`;
+}
 function scopeBar(){
   return `<div class="spread"><span class="note">${esc(periodSummary())}</span><div class="row">${scopeSelect()}</div></div>
    ${ui.acc||ui.tag?`<div class="row"><span class="chip">${ui.tag?`<span class="dot" style="background:${tagColor(ui.tag)}"></span>Alleen label ${esc(ui.tag)}`:`Alleen ${esc((S.accounts[ui.acc]||{}).label||'')}`}</span><button class="btn-small" data-act="scopeall">Alles tonen</button></div>`:''}`;
@@ -1082,7 +1120,7 @@ function viewDoelen(){
   const s=cur?monthSum(cur):{bycat:{}};
   const sums=ms.slice(-6).map(monthSum);
   const avg=c=>sums.length?sums.reduce((a,x)=>a+(x.bycat[c]||0),0)/sums.length:0;
-  const expCats=allCats().map(x=>x[0]).filter(c=>!['Inkomsten','Royalties','Sparen','Contant gespaard','Belastingreservering','Eigen rekening'].includes(c));
+  const expCats=allCats().map(x=>x[0]).filter(c=>!['Inkomsten','Royalties','Overboeking eigen rekening','Sparen','Contant gespaard','Belastingreservering','Eigen rekening'].includes(c));
   const goals=S.goals; const goalsPer=goals.reduce((a,g)=>a+goalMonthly(g).per,0);
   const nm=new Date(); const defBy=`${nm.getFullYear()+1}-${String(nm.getMonth()+1).padStart(2,'0')}`;
   const pot=cashPot(); const sd=salaryDays(); const salName=(payerCandidates().find(x=>x.key===salaryKey())||{}).name;

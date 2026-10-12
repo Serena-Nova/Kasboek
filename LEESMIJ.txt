@@ -1,15 +1,11 @@
-Kasboek — versie 2026-10-12e
+Kasboek — versie 2026-10-12f
 
 UPDATEN
 Upload alle bestanden uit deze map over de oude heen in je GitHub-repository.
-Je gegevens, regels en labels blijven gewoon staan.
 
-NIEUW IN DEZE VERSIE
-- Tabblad "Sparen & plannen" (was Budget & doelen):
-  * Geplande uitgaven (bijv. een bed): bedrag, datum, betalen van bank of spaarpot.
-  * Contante spaarpot: opnames na je salaris tellen als gespaard; zelf geld erbij/eruit zetten.
-- Inzicht:
-  * Vooruitblik: wat er de komende maanden waarschijnlijk overblijft, inclusief geplande uitgaven.
-  * Saldo door de tijd (uit "Saldo na mutatie" in de ING-CSV) + buffer van 3 maanden vaste lasten.
-- Spaarrekening zonder CSV: vul het saldo zelf in bij Instellingen > Rekeningen.
-- Nieuwe categorie "Contant gespaard".
+OPGELOST
+- "Over" kon veel te hoog uitvallen. Overboekingen naar een eigen rekening werden weggestreept,
+  ook als die rekening (of die periode) niet was ingeladen. Dan verdwenen de uitgaven van die
+  rekening uit beeld. Nu tellen zulke overboekingen gewoon mee als uitgave (of inkomen).
+- Nieuw bij Inzicht: "Klopt het?" — vergelijkt "over" met je echte saldo uit de afschriften,
+  laat per rekening zien welke periode is ingeladen, en wat Kasboek als inkomen telt.
