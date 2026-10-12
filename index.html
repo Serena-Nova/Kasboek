@@ -121,6 +121,22 @@ table.yt{border-collapse:separate;border-spacing:0;font-size:.84rem;width:100%}
 .yt td[data-act]:hover{outline:2px solid var(--accent);outline-offset:-2px}
 .yt .nm{display:flex;gap:7px;align-items:center;overflow:hidden}
 .yt .nm span:last-child{overflow:hidden;text-overflow:ellipsis}
+.bon{display:flex;flex-direction:column}
+.bonrow{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 12px;align-items:center;padding:10px 4px;border-bottom:1px solid var(--line);font:inherit;color:inherit;background:none;border-left:none;border-right:none;border-top:none;border-radius:0;width:100%;text-align:left}
+.bonrow .num{text-align:right;font-family:var(--f-num);font-variant-numeric:tabular-nums;white-space:nowrap}
+.bonrow.tot{font-weight:600;font-size:1.05rem}
+.bonrow.end{border-top:2px solid var(--ink);border-bottom:none;margin-top:2px}
+.bongrp>summary{list-style:none;cursor:pointer}
+.bongrp>summary::-webkit-details-marker{display:none}
+.bongrp>summary:hover{background:var(--accent-soft)}
+.bongrp .nm{display:flex;gap:8px;align-items:center;min-width:0;font-weight:500}
+.bongrp .chev{color:var(--muted);transition:transform .15s}
+.bongrp[open] .chev{transform:rotate(90deg)}
+.bonbar{grid-column:1 / -1;height:6px;background:var(--accent-soft);border-radius:3px;overflow:hidden}
+.bonbar span{display:block;height:100%;border-radius:3px}
+.bonitems{padding:2px 0 6px 20px;background:var(--bg)}
+.bonrow.sub{padding:7px 8px;font-size:.92rem;cursor:pointer}
+.bonrow.sub:hover{background:var(--accent-soft)}
 .wf{display:flex;flex-direction:column;gap:2px}
 .wf .r{display:grid;grid-template-columns:minmax(0,10.5em) minmax(0,1fr) 6.2em;gap:10px;align-items:center;background:none;border:none;border-radius:6px;padding:5px 4px;text-align:left;font:inherit;color:inherit;width:100%}
 .wf button.r{cursor:pointer}
@@ -220,7 +236,7 @@ ol.steps{margin:6px 0 0;padding-left:1.2em;color:var(--muted);font-size:.9rem;di
 <div id="toast" class="toast" hidden></div>
 
 <script>
-const VERSION='2026-10-12g';
+const VERSION='2026-10-12i';
 const clone=o=>JSON.parse(JSON.stringify(o));
 /* ---------- Basis ---------- */
 const STORE='kasboek.v1', LOCAL='kasboek.device';
@@ -566,14 +582,14 @@ const months=()=>[...new Set(TX.filter(t=>inScope(t)).map(t=>t.mk))].sort();
 const mLabel=mk=>PIDX[mk]?PIDX[mk].name:(MONTHS[+mk.slice(5,7)-1]+' '+mk.slice(0,4));
 const mShort=mk=>PIDX[mk]?PIDX[mk].short:MSHORT[+mk.slice(5,7)-1];
 function monthSum(mk){
-  let inc=0,out=0,saved=0,moved=0,oneoff=0;const bycat={};
+  let inc=0,out=0,saved=0,moved=0,oneoff=0,oneoffIn=0;const bycat={};
   for(const t of TX){ if(t.mk!==mk||!inScope(t)) continue;
     if(IGNORE.has(t.cat)){moved+=t.amount;continue;}
     if(SAVING.has(t.cat)){saved+=-t.amount;continue;}
-    if(t.amount>0&&INCOME.has(t.cat)) inc+=t.amount;
+    if(t.amount>0&&INCOME.has(t.cat)){ inc+=t.amount; if(S.oneoff[t.id]) oneoffIn+=t.amount; }
     else { out+=-t.amount; bycat[t.cat]=(bycat[t.cat]||0)-t.amount; if(S.oneoff[t.id]) oneoff+=-t.amount; } // terugbetaling = minder uitgegeven
   }
-  return {inc,out,saved,moved,oneoff,bycat};
+  return {inc,out,saved,moved,oneoff,oneoffIn,bycat};
 }
 function tagSum(mk){
   const o={};let none=0;
@@ -777,7 +793,7 @@ function currentTxList(){
   if(ui.fromDate) list=list.filter(t=>t.date>=ui.fromDate);
   if(ui.fmonth) list=list.filter(t=>t.mk===ui.fmonth);
   if(ui.fcat) list=list.filter(t=>t.cat===ui.fcat);
-  if(ui.ftag) list=list.filter(t=>ui.ftag==='__none'?!t.tags.length:t.tags.includes(ui.ftag));
+  if(ui.ftag) list=list.filter(t=>ui.ftag==='__none'?!t.tags.length:ui.ftag==='__oneoff'?!!S.oneoff[t.id]:t.tags.includes(ui.ftag));
   if(ui.q){const q=ui.q.toLowerCase();list=list.filter(t=>(t.name+' '+t.desc).toLowerCase().includes(q));}
   return list;
 }
@@ -794,10 +810,11 @@ function viewTx(){
      <select id="fmonth" aria-label="Maand"><option value="">Alle maanden</option>${ms.slice().reverse().map(m=>`<option value="${m}" ${m===ui.fmonth?'selected':''}>${mLabel(m)}</option>`).join('')}</select>
      <select id="fcat" aria-label="Categorie"><option value="">Alle categorieën</option>${allCats().map(([c])=>`<option ${c===ui.fcat?'selected':''}>${esc(c)}</option>`).join('')}</select>
      ${accSel}
-     ${S.tags.length?`<select id="ftag" aria-label="Label"><option value="">Alle labels</option><option value="__none" ${ui.ftag==='__none'?'selected':''}>Zonder label</option>${S.tags.map(n=>`<option ${n===ui.ftag?'selected':''}>${esc(n)}</option>`).join('')}</select>`:''}
+     ${S.tags.length?`<select id="ftag" aria-label="Label"><option value="">Alle labels</option><option value="__none" ${ui.ftag==='__none'?'selected':''}>Zonder label</option><option value="__oneoff" ${ui.ftag==='__oneoff'?'selected':''}>Eenmalig</option>${S.tags.map(n=>`<option ${n===ui.ftag?'selected':''}>${esc(n)}</option>`).join('')}</select>`:''}
    </div>
    ${S.tags.length&&list.length&&(ui.q||ui.fcat||ui.fmonth||ui.facc||ui.ftag)?`<div class="bulk"><label for="bulktag">Alle ${list.length} een label geven:</label>
      <select id="bulktag">${S.tags.map(n=>`<option>${esc(n)}</option>`).join('')}</select><button class="btn-small" data-act="bulktag">Toevoegen</button><button class="btn-small" data-act="bulkuntag">Weghalen</button></div>`:''}
+   ${list.length&&list.length<=200&&(ui.q||ui.fcat||ui.fmonth||ui.facc||ui.ftag)?`<div class="bulk"><span>Alle ${list.length}:</span>${list.every(t=>S.oneoff[t.id])?`<button class="btn-small" data-act="bulkoneoff0">Niet meer eenmalig</button>`:`<button class="btn-small" data-act="bulkoneoff1">Markeer als eenmalig</button>`}</div>`:''}
    ${ui.fromDate?`<div class="row"><span class="chip">Vanaf ${fmtD(ui.fromDate)}</span><button class="btn-small" data-act="clearfrom">Alle datums</button></div>`:''}
    <div class="spread"><span class="note">${list.length} transacties · saldo <span class="num">${eur.format(total)}</span></span>
      ${uncats&&ui.fcat!=='Overig'?`<button class="btn-small" data-act="showOverig">${uncats} nog in “Overig”</button>`:''}</div>
@@ -809,6 +826,7 @@ function viewTx(){
      <div class="txmeta"><select data-tx="${t.id}" aria-label="Categorie" style="border-color:${catColor(t.cat)}">${catOptions(t.cat)}</select>
        ${ui.tagOpen===t.id?S.tags.map(n=>tagChip(n,t.tags.includes(n),`data-act="ttag" data-id="${t.id}" data-tag="${esc(n)}" aria-pressed="${t.tags.includes(n)}"`)).join('')+`<button class="btn-small" data-act="tagclose">Klaar</button>`
          :t.tags.map(n=>tagChip(n,true,`data-act="tagopen" data-id="${t.id}"`)).join('')+(S.tags.length?`<button class="tagchip add" data-act="tagopen" data-id="${t.id}">+ label</button>`:'')}
+       <button class="tagchip ${S.oneoff[t.id]?'on':'add'}" style="${S.oneoff[t.id]?'border-color:var(--warn);color:var(--warn)':''}" data-act="oneoff" data-id="${t.id}" aria-pressed="${!!S.oneoff[t.id]}">${S.oneoff[t.id]?'✓ eenmalig':'eenmalig?'}</button>
        ${multiAcc?`<span class="accname">${esc((S.accounts[normIban(t.account)]||{}).label||'')}</span>`:''}</div>
    </div>`).join('')||'<p class="empty">Niets gevonden.</p>'}
    </div></div>
@@ -838,7 +856,7 @@ function viewNu(){
   const win=TX.filter(t=>t.date>=from&&t.date<=lastData&&inScope(t,true)&&(!ui.tag));
   const groups={};
   for(const t of win){ let key=t.cat, label=t.cat, color=catColor(t.cat);
-    if(t.cat==='Eigen rekening'){ if(!ui.acc) continue; key='__own'; label='Naar/van je andere rekeningen'; color='var(--muted)'; }
+    if(t.cat==='Eigen rekening'){ key='__own'; label=ui.acc?'Naar/van je andere rekeningen':'Tussen jullie rekeningen (onderweg)'; color='var(--muted)'; }
     else if(t.cat==='Sparen'){label=t.amount<0?'Naar spaarrekening':'Van spaarrekening';}
     else if(t.cat==='Contant gespaard'){label='Gepind voor spaarpot';}
     else if(t.cat==='Overboeking eigen rekening'){ const a=S.accounts[normIban(t.counter)]; label=(t.amount<0?'Naar ':'Van ')+((a&&a.label)||'eigen rekening'); key='__ov'+normIban(t.counter)+(t.amount<0?'-':'+'); }
@@ -891,15 +909,26 @@ function viewNu(){
      <button data-act="win" data-v="14" aria-pressed="${ui.win==='14'}">2 weken</button>
      <button data-act="win" data-v="28" aria-pressed="${ui.win==='28'}">4 weken</button></div>
 
-   <div class="card stack"><div><h2>Waar het geld heen ging</h2><p class="sub">${winLabel[0].toUpperCase()+winLabel.slice(1)}: <span class="in num">+${eur0.format(inTot)}</span> binnen, <span class="out num">−${eur0.format(-outTot)}</span> eruit.</p></div>
-     <div class="wf">
-       ${hasBal?`<div class="r tot"><span class="nm"><span>Saldo op ${fmtD(prevDay)}</span></span><span class="tr">${zero}${tot(startBal,'var(--accent)')}</span><span class="amt">${eur0.format(startBal)}</span></div>`:''}
-       ${steps.map(g=>`<button class="r" data-act="nucat" data-cat="${esc(g.cat)}" data-from="${from}" title="${g.n} transacties"><span class="nm"><span class="dot" style="background:${g.color}"></span><span>${esc(g.label)}</span></span><span class="tr">${zero}${bar(g.a,g.b,g.sum>0?'var(--in)':'var(--out)')}</span><span class="amt ${g.sum>0?'in':'out'}">${g.sum>0?'+':'−'}${nf0.format(Math.abs(g.sum))}</span></button>`).join('')}
-       ${hasBal&&Math.abs(gap)>=5?`<div class="r"><span class="nm"><span class="dot" style="background:var(--line)"></span><span>Niet ingedeeld</span></span><span class="tr">${zero}${bar(calcEnd,endBal,'var(--muted)')}</span><span class="amt">${gap>0?'+':'−'}${nf0.format(Math.abs(gap))}</span></div>`:''}
-       ${hasBal?`<div class="r tot"><span class="nm"><span>Saldo nu</span></span><span class="tr">${zero}${tot(endBal,endBal<0?'var(--out)':'var(--accent)')}</span><span class="amt ${endBal<0?'out':''}">${eur0.format(endBal)}</span></div>`:''}
+   ${(()=>{
+     const G={}; const order=['Binnen','Vaste lasten','Dagelijks','Vrij besteedbaar','Overig','Opzij gezet','Andere rekeningen'];
+     const gc={'Binnen':'var(--in)','Vaste lasten':'#2F6E9E','Dagelijks':'#C9822B','Vrij besteedbaar':'#C25C8E','Overig':'#9AA6A2','Opzij gezet':'var(--accent)','Andere rekeningen':'var(--muted)'};
+     for(const g of lines){ const grp=g.sum>0&&!SAVING.has(g.cat)&&g.key!=='__own'?'Binnen':SAVING.has(g.cat)?'Opzij gezet':(g.key==='__own'||g.cat==='Overboeking eigen rekening')?'Andere rekeningen':groupOf(g.cat);
+       (G[grp]=G[grp]||{name:grp,sum:0,items:[]}); G[grp].sum+=g.sum; G[grp].items.push(g); }
+     const groupsL=order.filter(n=>G[n]&&Math.abs(G[n].sum)>=1).map(n=>G[n]);
+     const gmax=Math.max(1,...groupsL.map(g=>Math.abs(g.sum)));
+     const fmtS=v=>`${v>=0?'+':'−'} ${eur0.format(Math.abs(v))}`;
+     return `<div class="card stack"><div><h2>Waar het geld heen ging</h2><p class="sub">${winLabel[0].toUpperCase()+winLabel.slice(1)}.</p></div>
+     <div class="bon">
+       ${hasBal?`<div class="bonrow tot"><span>Saldo op ${fmtD(prevDay)}</span><span class="num">${eur0.format(startBal)}</span></div>`:''}
+       ${groupsL.map(g=>`<details class="bongrp"><summary class="bonrow"><span class="nm"><span class="dot" style="background:${gc[g.name]}"></span><span>${g.name}</span><span class="chev" aria-hidden="true">›</span></span>
+           <span class="num ${g.sum>0?'in':g.name==='Opzij gezet'?'':'out'}">${fmtS(g.sum)}</span>
+           <span class="bonbar"><span style="width:${(Math.abs(g.sum)/gmax*100).toFixed(1)}%;background:${gc[g.name]}"></span></span></summary>
+         <div class="bonitems">${g.items.sort((x,y)=>Math.abs(y.sum)-Math.abs(x.sum)).map(it=>`<button class="bonrow sub" data-act="nucat" data-cat="${esc(it.cat)}" data-from="${from}"><span>${esc(it.label)} <span class="note">${it.n}×</span></span><span class="num">${fmtS(it.sum)}</span></button>`).join('')}</div></details>`).join('')}
+       ${hasBal&&Math.abs(gap)>=5?`<div class="bonrow"><span class="note">Verschil met je echte saldo</span><span class="num note">${fmtS(gap)}</span></div>`:''}
+       ${hasBal?`<div class="bonrow tot end"><span>Saldo nu</span><span class="num ${endBal<0?'out':''}">${eur0.format(endBal)}</span></div>`:''}
      </div>
-     <p class="note">Van boven naar beneden: wat er op ${fmtD(prevDay)} stond, wat erbij kwam en wat eraf ging, tot het saldo van nu. Tik op een regel voor de transacties.</p>
-   </div>
+     <p class="note">Tik op een groep om te zien wat erin zit, en daarna op een regel voor de transacties.${hasBal&&Math.abs(gap)>=5?' Het verschil met je echte saldo komt meestal door transacties die nog niet zijn ingeladen.':''}</p>
+     </div>`;})()}
 
    <div class="card stack"><h2>Uitgaven per dag</h2>${dayChart}<p class="note">Lichter = weekend. ${Math.max(0,...perDay)>0?`Hoogste dag: ${eur0.format(Math.max(...perDay))} op ${fmtD(days[perDay.indexOf(Math.max(...perDay))])}.`:'Geen uitgaven in deze periode.'}</p></div>
 
@@ -1032,12 +1061,12 @@ function viewInzicht(){
   const all=doneMonths(); const base=all.slice(-24); const last12=all.slice(-12);
   if(last12.length<3) return `<div class="stack">${scopeBar()}<div class="card empty">Voor inzicht zijn minstens drie afgesloten maanden nodig. Laad een langere periode in, bijvoorbeeld heel 2025.</div></div>`;
   const S12=last12.map(k=>({k,...monthSum(k)}));
-  const normal=S12.map(x=>({k:x.k,v:x.inc-(x.out-x.oneoff)}));
+  const normal=S12.map(x=>({k:x.k,v:(x.inc-x.oneoffIn)-(x.out-x.oneoff)}));
   const med=pct(normal.map(x=>x.v),.5), p25=pct(normal.map(x=>x.v),.25);
   const advice=Math.max(0,Math.floor(p25/25)*25);
   const okCount=normal.filter(x=>x.v>=advice).length;
   const savedAvg=S12.reduce((a,x)=>a+x.saved,0)/S12.length;
-  const oneoffAvg=S12.reduce((a,x)=>a+x.oneoff,0)/S12.length;
+  const oneoffAvg=S12.reduce((a,x)=>a+Math.abs(x.oneoff)+x.oneoffIn,0)/S12.length;
   // seizoen
   const BS=base.map(k=>({k,...monthSum(k)}));
   const avgOut=BS.reduce((a,x)=>a+(x.out-x.oneoff),0)/BS.length;
@@ -1069,8 +1098,10 @@ function viewInzicht(){
   // eenmalig
   const recNames=new Set(recurring().map(r=>normName(r.name)));
   const lim=Math.max(150,avgOut*.08); const since=base[0]?PIDX[base[0]]?.start||base[0]+'-01':'0000';
-  const big=TX.filter(t=>inScope(t)&&t.amount<=-lim&&t.date>=since&&!SAVING.has(t.cat)&&!IGNORE.has(t.cat)&&!recNames.has(normName(t.name)||normName(t.desc))&&t.cat!=='Wonen')
-    .sort((a,b)=>a.amount-b.amount).slice(0,15);
+  const salK=salaryKey(); const incCount={}; TX.forEach(t=>{if(t.amount>0){const k=payerKey(t);incCount[k]=(incCount[k]||0)+1;}});
+  const big=TX.filter(t=>inScope(t)&&Math.abs(t.amount)>=lim&&t.date>=since&&!SAVING.has(t.cat)&&!IGNORE.has(t.cat)&&t.cat!=='Wonen'
+      &&(t.amount<0?!recNames.has(normName(t.name)||normName(t.desc)):(payerKey(t)!==salK&&(incCount[payerKey(t)]||0)<3)))
+    .sort((a,b)=>Math.abs(b.amount)-Math.abs(a.amount)).slice(0,20);
   // klein
   const k3=all.slice(-3); const small=TX.filter(t=>k3.includes(t.mk)&&inScope(t)&&t.amount<0&&t.amount>-15&&!SAVING.has(t.cat)&&!IGNORE.has(t.cat)&&!recNames.has(normName(t.name)||normName(t.desc)));
   const smSum=small.reduce((a,t)=>a-t.amount,0)/Math.max(1,k3.length), smN=small.length/Math.max(1,k3.length);
@@ -1111,10 +1142,10 @@ function viewInzicht(){
        :`<p class="note">Laad je afschriften van ${cy-1} in, dan zie je hier per categorie wat er dit jaar meer of minder uitging dan vorig jaar.</p>`}
    </div>
 
-   <div class="card stack"><h2>Grote eenmalige uitgaven</h2>
-     <p class="sub">Uitgaven boven ${eur0.format(lim)} die niet elke maand terugkomen. Markeer echte uitschieters (een wasmachine, een vakantie) als <b>eenmalig</b>. Dan rekenen het spaaradvies en de dure maanden zonder ze.</p>
-     ${big.length?`<div>${big.map(t=>`<div class="rec"><div style="min-width:0"><b>${esc(t.name||t.desc)}</b><span class="pill">${esc(t.cat)}</span><div class="meta">${fmtD(t.date)} ${t.date.slice(0,4)} · ${eur.format(-t.amount)}</div></div>
-       <div class="amt"><button class="tagchip ${S.oneoff[t.id]?'on':''}" style="${S.oneoff[t.id]?'border-color:var(--warn)':''}" data-act="oneoff" data-id="${t.id}" aria-pressed="${!!S.oneoff[t.id]}">${S.oneoff[t.id]?'✓ Eenmalig':'Eenmalig?'}</button></div></div>`).join('')}</div>`:'<p class="note">Geen grote losse uitgaven gevonden.</p>'}
+   <div class="card stack"><h2>Grote eenmalige bedragen</h2>
+     <p class="sub">Bedragen boven ${eur0.format(lim)} die niet elke maand terugkomen, zowel uitgaven als geld dat binnenkwam. Markeer echte uitschieters als <b>eenmalig</b>: een wasmachine, een autoreparatie, of een uitkering van de verzekering. Dan rekenen het spaaradvies, de vooruitblik en de dure maanden zonder ze. Je kunt dit ook bij elke transactie doen.</p>
+     ${big.length?`<div>${big.map(t=>`<div class="rec"><div style="min-width:0"><b>${esc(t.name||t.desc)}</b><span class="pill">${esc(t.cat)}</span><div class="meta">${fmtD(t.date)} ${t.date.slice(0,4)} · <span class="${t.amount>0?'in':''}">${t.amount>0?'+':''}${eur.format(t.amount)}</span></div></div>
+       <div class="amt"><button class="tagchip ${S.oneoff[t.id]?'on':''}" style="${S.oneoff[t.id]?'border-color:var(--warn)':''}" data-act="oneoff" data-id="${t.id}" aria-pressed="${!!S.oneoff[t.id]}">${S.oneoff[t.id]?'✓ Eenmalig':'Eenmalig?'}</button></div></div>`).join('')}</div>`:'<p class="note">Geen grote losse bedragen gevonden.</p>'}
    </div>
 
    <div class="card stack"><h2>Kleine bedragen die optellen</h2>
@@ -1125,7 +1156,7 @@ function viewInzicht(){
   </div>`;
 }
 function forecastCard(normal,S12,season,avgOut,advice){
-  const last6=S12.slice(-6); const inc=pct(last6.map(x=>x.inc),.5);
+  const last6=S12.slice(-6); const inc=pct(last6.map(x=>x.inc-x.oneoffIn),.5);
   const outNorm=pct(S12.map(x=>x.out-x.oneoff),.5);
   const cur=periodOf(todayISO()); if(!cur) return '';
   const idx=PERIODS.indexOf(cur); const next=PERIODS.slice(idx,idx+4).filter(Boolean);
@@ -1664,6 +1695,7 @@ document.addEventListener('click',async e=>{
     const nm=normName(tx.name)||normName(tx.desc);
     if(on&&nm) toast(`Voortaan alles van “${tx.name||tx.desc}” als ${tg}?`,{label:'Ja, maak regel',run:()=>{
       const n=addRule({match:nm,dir:tx.amount>0?'in':'out',cat:'',tags:[tg]});toast(`Regel gemaakt, geldt voor ${n} transacties.`);}});}
+  if(a==='bulkoneoff1'||a==='bulkoneoff0'){const list=currentTxList();for(const t of list){if(a==='bulkoneoff1')S.oneoff[t.id]=true;else delete S.oneoff[t.id];}save();render();toast(`${list.length} transacties ${a==='bulkoneoff1'?'gemarkeerd als eenmalig':'niet meer eenmalig'}.`);}
   if(a==='bulktag'||a==='bulkuntag'){const tg=$('#bulktag').value; const list=currentTxList(); 
     for(const t of list){ const cur=t.tags; S.txTags[t.id]=a==='bulktag'?(cur.includes(tg)?cur:[...cur,tg]):cur.filter(x=>x!==tg); }
     save();render();toast(`${list.length} transacties ${a==='bulktag'?'kregen':'verloren'} label ${tg}.`);}

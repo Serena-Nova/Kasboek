@@ -1,12 +1,10 @@
-Kasboek — versie 2026-10-12g
+Kasboek — versie 2026-10-12i
 
 UPDATEN
 Upload alle bestanden uit deze map over de oude heen in je GitHub-repository.
 
-NIEUW: tabblad "Nu" (opent voortaan als eerste)
-- Saldo op je rekeningen nu (uit de saldo-kolom van je ING-afschrift).
-- Wat er nog afgaat tot je volgende salaris, en wat er vrij te besteden is (ook per dag).
-- "Waar het geld heen ging": stap voor stap van het saldo 2 weken geleden naar nu
-  (of sinds je salaris, of 4 weken).
-- Uitgaven per dag en de grootste uitgaven.
-- Het oude "Overzicht" heet nu "Maand".
+VERANDERD
+- "Waar het geld heen ging" (tabblad Nu) is nu een kassabon:
+  saldo begin, Binnen, Vaste lasten, Dagelijks, Vrij besteedbaar, Opzij gezet, saldo nu.
+  Tik op een groep om de categorieën te zien, en daarna op een regel voor de transacties.
+- Overboekingen die tussen jullie rekeningen "onderweg" zijn, staan nu apart in plaats van "Niet ingedeeld".
