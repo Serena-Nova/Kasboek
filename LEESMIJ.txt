@@ -1,10 +1,16 @@
-Kasboek — versie 2026-10-12j
+Kasboek — versie 2026-10-12k
 
 UPDATEN
 Upload alle bestanden uit deze map over de oude heen in je GitHub-repository.
 
-VERANDERD (tabblad Nu)
-- Per rekening: saldo én de datum van die stand. Oranje als het afschrift ouder is dan de andere.
-- Per rekening kies je "telt mee" / "telt niet mee" voor "Vrij te besteden"
-  (handig voor de vaste-lastenrekening, waarvan het geld al bestemd is).
-- "Gaat nog af" telt alleen vaste lasten van de rekeningen die meetellen.
+VERANDERD
+- Nog maar vier tabbladen: Nu, Inzicht, Transacties en Meer.
+  Onder "Meer" staan Maand, Jaar, Vaste lasten, Sparen & plannen, Royalty's & belasting en Instellingen.
+- Bovenaan Nu: "Deze week" — een kort lijstje met wat je concreet kunt doen
+  (afschrift inladen, bedrag opzij zetten na salaris, geplande uitgave, duurder abonnement, ...).
+  Tik op "✓ Gedaan" om iets weg te halen.
+
+HOE GEBRUIK JE HET
+- Elke zondag: afschriften inladen, kijk op Nu naar "Deze week" en "per dag tot salaris".
+- Na je salaris: doe wat er bij "Deze week" staat over opzij zetten.
+- Af en toe: Inzicht en Meer > Vaste lasten om te zien waar het lekt.

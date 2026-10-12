@@ -121,6 +121,11 @@ table.yt{border-collapse:separate;border-spacing:0;font-size:.84rem;width:100%}
 .yt td[data-act]:hover{outline:2px solid var(--accent);outline-offset:-2px}
 .yt .nm{display:flex;gap:7px;align-items:center;overflow:hidden}
 .yt .nm span:last-child{overflow:hidden;text-overflow:ellipsis}
+.todo{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px 14px;align-items:center;padding:12px 0;border-bottom:1px solid var(--line)}
+.todo:last-child{border-bottom:none}
+.todo .tt{line-height:1.45;min-width:0}
+.todo .tb{display:flex;gap:6px;justify-content:flex-end;flex-wrap:wrap}
+@media (max-width:560px){.todo{grid-template-columns:1fr}.todo .tb{justify-content:flex-start}}
 .bon{display:flex;flex-direction:column}
 .bonrow{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 12px;align-items:center;padding:10px 4px;border-bottom:1px solid var(--line);font:inherit;color:inherit;background:none;border-left:none;border-right:none;border-top:none;border-radius:0;width:100%;text-align:left}
 .bonrow .num{text-align:right;font-family:var(--f-num);font-variant-numeric:tabular-nums;white-space:nowrap}
@@ -221,14 +226,9 @@ ol.steps{margin:6px 0 0;padding-left:1.2em;color:var(--muted);font-size:.9rem;di
 
   <nav class="tabs" role="tablist">
     <button role="tab" data-tab="nu" aria-selected="true">Nu</button>
-    <button role="tab" data-tab="overzicht">Maand</button>
-    <button role="tab" data-tab="jaar">Jaar</button>
     <button role="tab" data-tab="inzicht">Inzicht</button>
     <button role="tab" data-tab="transacties">Transacties</button>
-    <button role="tab" data-tab="vast">Vaste lasten</button>
-    <button role="tab" data-tab="doelen">Sparen &amp; plannen</button>
-    <button role="tab" data-tab="belasting">Royalty's &amp; belasting</button>
-    <button role="tab" data-tab="instellingen">Instellingen</button>
+    <button role="tab" data-tab="meer">Meer</button>
   </nav>
 
   <main id="view"></main>
@@ -236,7 +236,7 @@ ol.steps{margin:6px 0 0;padding-left:1.2em;color:var(--muted);font-size:.9rem;di
 <div id="toast" class="toast" hidden></div>
 
 <script>
-const VERSION='2026-10-12j';
+const VERSION='2026-10-12k';
 const clone=o=>JSON.parse(JSON.stringify(o));
 /* ---------- Basis ---------- */
 const STORE='kasboek.v1', LOCAL='kasboek.device';
@@ -299,7 +299,7 @@ const PLAT_COLORS=['#7A5CC2','#3C9FA8','#C9822B','#4FA37A','#C25C8E','#2F6E9E','
 const TAX={year:2026,brackets:[[38883,.3575],[78426,.3756],[Infinity,.495]],za:1200,mkb:.127,deductCap:.3756,zvw:.0485,zvwMax:79409};
 
 const DEFAULT_STATE={tx:[],userRules:[],disabledBuiltins:[],extraCats:[],overrides:{},tax:{},sample:true,
-  budgets:{},goals:[],accounts:{},taxReserved:{},period:{mode:'cal',day:1,payer:''},tags:['Idonea','Jordy','Gezin','Kind','Dieren'],txTags:{},oneoff:{},cash:[],cashAuto:false,planned:[],manualBal:{},savedAt:0,wipedAt:0};
+  budgets:{},goals:[],accounts:{},taxReserved:{},period:{mode:'cal',day:1,payer:''},tags:['Idonea','Jordy','Gezin','Kind','Dieren'],txTags:{},oneoff:{},dismissed:{},cash:[],cashAuto:false,planned:[],manualBal:{},savedAt:0,wipedAt:0};
 let S=clone(DEFAULT_STATE);
 let D={tab:'',dbxKey:'',dbxRefresh:'',dbxAccess:'',dbxExp:0,pw:'',lastSync:0,syncErr:''}; // alleen dit apparaat
 let ui={tab:'nu',win:'14',month:null,q:'',fcat:'',fmonth:'',facc:'',ftag:'',acc:'',tag:'',tagOpen:'',limit:150,taxYear:null,wipe:false,restore:false,backupText:''};
@@ -657,12 +657,14 @@ function goalMonthly(g){
 /* ---------- Weergave ---------- */
 function render(){
   rebuild();
-  document.querySelectorAll('nav.tabs button').forEach(b=>b.setAttribute('aria-selected',b.dataset.tab===ui.tab));
+  const inMore=MORE.some(m=>m[0]===ui.tab);
+  document.querySelectorAll('nav.tabs button').forEach(b=>b.setAttribute('aria-selected',b.dataset.tab===ui.tab||(inMore&&b.dataset.tab==='meer')));
   $('#banner').innerHTML=S.sample?`<div class="banner"><div><b>Voorbeeldgegevens.</b> Verzonnen transacties om te laten zien hoe het werkt. Laad je eigen ING-bestand om ze te vervangen.</div><label class="btn btn-small" for="file">Eigen bestand kiezen</label></div>`:'';
   renderSync();
   const v=$('#view');
-  if(!TX.length&&ui.tab!=='instellingen'){v.innerHTML=emptyView();return;}
-  v.innerHTML={nu:viewNu,overzicht:viewOverzicht,jaar:viewJaar,inzicht:viewInzicht,transacties:viewTx,vast:viewVast,doelen:viewDoelen,belasting:viewTax,instellingen:viewSettings}[ui.tab]();
+  if(!TX.length&&ui.tab!=='instellingen'&&ui.tab!=='meer'){v.innerHTML=emptyView();return;}
+  const back=inMore?`<div style="margin-bottom:10px"><button class="btn-link" data-act="tab" data-tab="meer">← Meer</button> <span class="note">· ${MORE.find(m=>m[0]===ui.tab)[1]}</span></div>`:'';
+  v.innerHTML=back+{meer:viewMeer,nu:viewNu,overzicht:viewOverzicht,jaar:viewJaar,inzicht:viewInzicht,transacties:viewTx,vast:viewVast,doelen:viewDoelen,belasting:viewTax,instellingen:viewSettings}[ui.tab]();
 }
 function renderSync(){
   $('#syncline').innerHTML=dbxConnected()?`<span class="status ${D.syncErr?'err':'ok'}"><i></i>${D.syncErr?'Dropbox: niet gesynchroniseerd':'Dropbox'+(D.lastSync?' · '+new Date(D.lastSync).toLocaleTimeString('nl-NL',{hour:'2-digit',minute:'2-digit'}):'')}</span>`:'Alles blijft op je eigen apparaat.';
@@ -834,6 +836,43 @@ function viewTx(){
   </div>`;
 }
 
+/* ---------- Meer ---------- */
+const MORE=[['overzicht','Maand','Eén maand in detail: per categorie, budgetten en labels.'],
+  ['jaar','Jaar','Alle maanden naast elkaar in één tabel, per categorie en per label.'],
+  ['vast','Vaste lasten','Abonnementen en vaste betalingen, en wat er duurder werd.'],
+  ['doelen','Sparen & plannen','Geplande uitgaven, contante spaarpot, spaardoelen en budgetten.'],
+  ['belasting',"Royalty's & belasting","Royalty's per platform en wat je opzij moet zetten voor de belasting."],
+  ['instellingen','Instellingen','Rekeningen, labels, regels, Dropbox en back-up.']];
+function viewMeer(){
+  return `<div class="stack">${MORE.map(([k,t,d])=>`<button class="card" data-act="tab" data-tab="${k}" style="text-align:left;cursor:pointer;display:flex;justify-content:space-between;gap:12px;align-items:center;border-radius:var(--r);font-weight:400">
+    <span><b style="font-family:var(--f-display);font-size:1.08rem">${t}</b><br><span class="note">${d}</span></span><span aria-hidden="true" style="color:var(--muted);font-size:1.3rem">›</span></button>`).join('')}</div>`;
+}
+function savingsAdvice(){
+  const last12=doneMonths().slice(-12); if(last12.length<3) return 0;
+  const v=last12.map(monthSum).map(x=>(x.inc-x.oneoffIn)-(x.out-x.oneoff));
+  return Math.max(0,Math.floor(pct(v,.25)/25)*25);
+}
+function todoList(ctx){
+  const {lastData,lastSal,nextSal,accRows,free,daysLeft}=ctx; const items=[]; const today=todayISO();
+  const add=(key,text,btn)=>{ if(!(S.dismissed||{})[key]) items.push({key,text,btn}); };
+  if(daysBetween(lastData,today)>6) add('load:'+lastData,`Je laatste transactie is van <b>${fmtD(lastData)}</b>. Laad je nieuwste afschriften in, dan klopt alles hieronder weer.`,`<label class="btn btn-small btn-primary" for="file">Inladen</label>`);
+  accRows.filter(r=>daysBetween(r.last,lastData)>3).forEach(r=>add('stale:'+r.i+r.last,`Het afschrift van <b>${esc(r.label)}</b> loopt maar tot ${fmtD(r.last)}. Download die rekening opnieuw.`,`<label class="btn btn-small" for="file">Inladen</label>`));
+  const vl=accRows.find(r=>/vast/i.test(r.label)&&(S.accounts[r.i]||{}).spend!==false);
+  if(vl&&accRows.length>1) add('spend:'+vl.i,`Het geld op <b>${esc(vl.label)}</b> is al bestemd voor de vaste lasten. Tel het niet mee bij "vrij te besteden"?`,`<button class="btn-small" data-act="spendtoggle" data-iban="${esc(vl.i)}">Niet meetellen</button>`);
+  if(lastSal&&daysBetween(lastSal,lastData)<=10){ const adv=savingsAdvice();
+    const saved=TX.filter(t=>t.date>=lastSal&&SAVING.has(t.cat)&&inScope(t)).reduce((a,t)=>a-t.amount,0);
+    if(adv>0&&saved<adv-5) add('save:'+lastSal,`Je salaris is binnen. Zet <b class="num">${eur0.format(adv-saved)}</b> opzij${saved>0?` (je deed al ${eur0.format(saved)})`:''}. Dat lukte de afgelopen maanden meestal ook.`,`<button class="btn-small" data-act="tab" data-tab="inzicht">Waarom dit bedrag?</button>`); }
+  plannedOpen().forEach(p=>{const d=daysBetween(today,p.date); if(d<0||d>90) return; const m=Math.max(1,Math.ceil(d/30.4));
+    add('plan:'+p.id+':'+periodKey(today),`<b>${esc(p.name)}</b> (${eur0.format(+p.amount)}) staat gepland op ${fmtD(p.date)}. ${m>1?`Zet er deze maand <b class="num">${eur0.format((+p.amount)/m)}</b> voor opzij.`:'Zorg dat het bedrag klaarstaat.'}`,`<button class="btn-small" data-act="tab" data-tab="doelen">Bekijken</button>`);});
+  if(nextSal&&daysLeft&&free/daysLeft<10) add('krap:'+lastSal,`Het is krap tot je salaris: <b class="num">${eur.format(Math.max(0,free)/daysLeft)}</b> per dag. Kijk hieronder wat er nog afgaat.`,'');
+  const since=addDays(lastData,-60); const ov=TX.filter(t=>t.date>=since&&t.cat==='Overig'&&t.amount<0&&inScope(t)).length;
+  if(ov>=3) add('overig:'+periodKey(today),`<b>${ov} uitgaven</b> van de afgelopen twee maanden staan nog in "Overig". Als je ze indeelt, worden de overzichten duidelijker.`,`<button class="btn-small" data-act="todo-overig">Indelen</button>`);
+  recurring().filter(r=>r.rise&&daysBetween(r.last,lastData)<=45).forEach(r=>add('rise:'+r.name+r.last,`<b>${esc(r.name)}</b> is duurder geworden: ${eur.format(r.rise.from)} → ${eur.format(r.rise.to)}. Nog nodig, of opzeggen?`,`<button class="btn-small" data-act="tab" data-tab="vast">Vaste lasten</button>`));
+  const y=+today.slice(0,4); const tc=taxCalc(y); const short=tc.total-tc.reserved;
+  if(tc.gross>0&&short>25) add('tax:'+periodKey(today),`Voor de belasting over je royalty's moet nog <b class="num">${eur0.format(short)}</b> opzij.`,`<button class="btn-small" data-act="tab" data-tab="belasting">Bekijken</button>`);
+  return items;
+}
+
 /* ---------- Nu: hoe sta je ervoor ---------- */
 function viewNu(){
   if(!TX.length) return emptyView();
@@ -895,6 +934,11 @@ function viewNu(){
    <div class="spread"><span class="note">Laatste transactie: <b>${fmtD(lastData)} ${lastData.slice(0,4)}</b>${daysBetween(lastData,todayISO())>3?` · <span class="warn">laad een nieuw afschrift in voor de stand van vandaag</span>`:''}</span><div class="row">${scopeSelect()}</div></div>
    ${ui.acc?`<div class="row"><span class="chip">Alleen ${esc((S.accounts[ui.acc]||{}).label||'')}</span><button class="btn-small" data-act="scopeall">Alles tonen</button></div>`:''}
 
+   ${(()=>{const todo=todoList({lastData,lastSal,nextSal,accRows,free,daysLeft});
+     return `<div class="card stack" style="border-color:var(--accent)"><h2>Deze week</h2>
+       ${todo.length?`<div>${todo.map(t=>`<div class="todo"><div class="tt">${t.text}</div><div class="tb">${t.btn}<button class="btn-small" data-act="dismiss" data-key="${esc(t.key)}" title="Gedaan, niet meer tonen">✓ Gedaan</button></div></div>`).join('')}</div>`
+       :'<p>Niets te doen. Alles is bijgewerkt.</p>'}
+     </div>`;})()}
    <div class="card stack"><h3>Op de rekening${accRows.length>1?'en':''}</h3>
      ${hasBal?`<div class="big ${endBal<0?'out':''}">${eur.format(endBal)}</div>
      <div>${accRows.map(r=>{const st=daysBetween(r.last,lastData)>3||daysBetween(r.last,todayISO())>3;const on=spendSet.has(r.i);return `<div class="rec"><div style="min-width:0"><b>${esc(r.label)}</b>
@@ -1618,6 +1662,7 @@ function mergeStates(a,b){
   if((older.savedAt||0)>(newer.wipedAt||0)) for(const t of older.tx||[]) if(!ids.has(t.id)){out.tx.push(t);ids.add(t.id);}
   out.overrides={...(older.overrides||{}),...(newer.overrides||{})};
   out.cash=mergeById(older.cash,newer.cash);out.planned=mergeById(older.planned,newer.planned);
+  out.dismissed={...(older.dismissed||{}),...(newer.dismissed||{})};
   out.oneoff={...(older.oneoff||{}),...(newer.oneoff||{})};
   out.txTags={...(older.txTags||{}),...(newer.txTags||{})};
   out.accounts={...(older.accounts||{}),...(newer.accounts||{})};
@@ -1685,6 +1730,8 @@ document.addEventListener('click',async e=>{
   if(a==='scopeall'){ui.acc='';ui.tag='';ui.month=null;render();}
   if(a==='clearfrom'){ui.fromDate='';render();}
   if(a==='spendtoggle'){const ac=S.accounts[b.dataset.iban];if(ac){ac.spend=ac.spend===false?true:false;save();render();}}
+  if(a==='dismiss'){S.dismissed={...(S.dismissed||{}),[b.dataset.key]:todayISO()};save();render();}
+  if(a==='todo-overig'){ui.tab='transacties';ui.fcat='Overig';ui.fmonth='';ui.ftag='';ui.q='';ui.facc='';ui.fromDate=addDays(TX[0].date,-60);ui.limit=150;render();window.scrollTo(0,0);}
   if(a==='win'){ui.win=b.dataset.v;render();}
   if(a==='nucat'){ui.tab='transacties';ui.q='';ui.limit=150;ui.facc=ui.acc;ui.ftag='';ui.fmonth='';ui.fcat=b.dataset.cat;ui.fromDate=b.dataset.from;render();window.scrollTo(0,0);}
   if(a==='ycat'||a==='ytag'){ui.tab='transacties';ui.q='';ui.limit=150;ui.facc=ui.acc;
@@ -1797,7 +1844,7 @@ document.addEventListener('visibilitychange',()=>{if(document.visibilityState===
 load();
 if(S.sample&&!S.tx.length) S=sampleState();
 if(!D.seenNu){D.seenNu=true;D.tab='nu';saveDevice();}
-if(D.tab&&['nu','overzicht','jaar','inzicht','transacties','vast','doelen','belasting','instellingen'].includes(D.tab)) ui.tab=D.tab;
+if(D.tab&&['meer','nu','overzicht','jaar','inzicht','transacties','vast','doelen','belasting','instellingen'].includes(D.tab)) ui.tab=D.tab;
 render();
 (async()=>{ if(IN_FRAME) return; const fresh=await dbxHandleRedirect(); if(dbxConnected()) dbxSync(!fresh); })();
 </script>
