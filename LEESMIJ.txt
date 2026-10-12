@@ -1,25 +1,27 @@
-Kasboek — versie 2026-10-11b
+Kasboek — versie 2026-10-12a
 
-ONLINE ZETTEN (GitHub Pages)
+UPDATEN
+Upload alle bestanden uit deze map over de oude heen in je GitHub-repository.
+Je gegevens blijven gewoon staan (in je browser en Dropbox).
+
+NIEUW IN DEZE VERSIE
+- Labels (Idonea, Jordy, Gezin, Kind, Dieren — zelf aan te passen) naast categorieën.
+  Een transactie kan meerdere labels hebben.
+- Meerdere rekeningen: alles samen, of per rekening apart bekijken.
+- Overboekingen tussen jullie eigen rekeningen tellen niet als uitgave.
+- Per rekening een standaardlabel (bijv. alles van Jordy's rekening = Jordy).
+- Labels via regels, per transactie, of in één keer voor een hele selectie.
+- Rekening toevoegen zonder CSV (alleen om overboekingen te herkennen).
+- Nieuwe categorie Huisdieren.
+
+ONLINE ZETTEN (eerste keer)
 1. Maak op GitHub een nieuwe repository, bijvoorbeeld "kasboek" (account SerenaNova).
 2. Upload alle bestanden uit deze map (niet de map zelf) naar de hoofdmap van de repository.
 3. Settings → Pages → Branch: main, map: / (root) → Save.
-4. Na een minuutje staat hij op: https://serenanova.github.io/kasboek/
-Bij een update: upload de nieuwe bestanden over de oude heen.
 
 DROPBOX KOPPELEN (eenmalig)
-1. Ga naar https://www.dropbox.com/developers/apps → Create app.
-2. Kies "Scoped access" en "App folder". Naam bijv. Kasboek-Serena.
-3. Tab Permissions: vink files.content.write en files.content.read aan → Submit.
-4. Tab Settings → OAuth 2 → Redirect URIs: voeg precies het adres van je Kasboek toe,
-   bijv. https://serenanova.github.io/kasboek/  (met de slash aan het eind) → Add.
-5. Kopieer de "App key". Open Kasboek → Instellingen → Dropbox → plak de key → Koppelen.
-6. Doe stap 5 ook op je telefoon (zelfde App key). Stel op beide apparaten hetzelfde
-   wachtwoord in bij Versleuteling als je het bestand versleuteld wilt hebben.
-
-Je gegevens komen in Dropbox in: Apps/<naam van je app>/kasboek.json
-Kasboek kan alleen in die map, niet in de rest van je Dropbox.
-
-LET OP
-- Repository mag openbaar zijn: er staan geen gegevens in, alleen de app.
-- Je transacties staan in je browser en (als gekoppeld) in je eigen Dropbox.
+1. https://www.dropbox.com/developers/apps → Create app → Scoped access → App folder.
+2. Permissions: files.content.write en files.content.read → Submit.
+3. Settings → OAuth 2 → Redirect URIs: het adres van je Kasboek, bijv.
+   https://serenanova.github.io/kasboek/  (met slash aan het eind).
+4. App key kopiëren → Kasboek → Instellingen → Dropbox → plakken → Koppelen.
